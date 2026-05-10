@@ -39,6 +39,15 @@
             overflow-x: hidden;
         }
 
+        body.dashboard-critical .header {
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25), 0 4px 12px rgba(239, 68, 68, 0.25);
+        }
+
+        body.dashboard-critical .video-panel,
+        body.dashboard-critical .alert-card {
+            border-color: rgba(239, 68, 68, 0.55);
+        }
+
         /* Header */
         .header {
             background-color: var(--primary-color);
@@ -182,6 +191,31 @@
             z-index: 10;
         }
 
+        .start-video-btn {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 20;
+            border: 0;
+            border-radius: 6px;
+            background: var(--primary-color);
+            color: #fff;
+            padding: 0.75rem 1.25rem;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            box-shadow: 0 8px 18px rgba(37, 99, 235, 0.28);
+        }
+
+        .start-video-btn:hover {
+            background: #1d4ed8;
+        }
+
+        .start-video-btn.is-hidden {
+            display: none;
+        }
+
         @keyframes pulse {
             0% { opacity: 0.9; }
             50% { opacity: 0.6; }
@@ -255,61 +289,67 @@
             background-size: 200% 200%;
         }
 
-        .crop-summary {
-            color: var(--text-muted);
-            font-size: 0.75rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            height: 20px; /* Keep height stable */
-        }
-
-        /* Conditional Buttons: Only show when flashing (alerting) */
-        .crop-action-btn {
-            display: none; /* Hidden by default */
-            background: none;
-            border: 1px solid var(--accent-color);
-            color: var(--accent-color);
-            padding: 0.1rem 0.3rem;
-            border-radius: 3px;
-            font-size: 0.7rem;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .crop-card.flashing .crop-action-btn {
-            display: inline-block; /* Show only when flashing */
-        }
-
-        .crop-action-btn:hover {
-            background-color: var(--accent-color);
-            color: white;
-        }
-
         /* Middle Section: Alert Feed */
         .alert-feed {
-            max-height: 200px;
+            min-height: 210px;
+            max-height: 310px;
             overflow-y: auto;
             background-color: #1e293b;
             color: #e2e8f0;
             border-radius: 4px;
             border: 1px solid var(--border-color);
-            font-family: 'Courier New', Courier, monospace;
+            font-family: "Segoe UI", Roboto, Arial, sans-serif;
+        }
+
+        .alert-header,
+        .alert-item {
+            display: grid;
+            grid-template-columns: 70px 92px 70px minmax(260px, 1.2fr) minmax(180px, 0.8fr) minmax(240px, 1fr);
+            gap: 0.75rem;
+            align-items: start;
+        }
+
+        .alert-header {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            padding: 0.55rem 0.75rem;
+            background: #0f172a;
+            color: #cbd5e1;
+            font-size: 0.72rem;
+            font-weight: 700;
+            border-bottom: 1px solid #334155;
         }
 
         .alert-item {
-            display: grid;
-            grid-template-columns: 100px 100px 1fr 200px;
-            gap: 1rem;
-            padding: 0.5rem 1rem;
+            padding: 0.65rem 0.75rem;
             border-bottom: 1px solid #334155;
-            font-size: 0.85rem;
-            align-items: center;
-            animation: fadeIn 0.3s ease-out;
+            font-size: 0.82rem;
+            animation: feedIn 0.25s ease-out;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-5px); }
+        .alert-item.latest {
+            background: rgba(59, 130, 246, 0.12);
+            box-shadow: inset 3px 0 0 var(--accent-color);
+        }
+
+        .alert-item.warning.latest {
+            background: rgba(245, 158, 11, 0.14);
+            box-shadow: inset 3px 0 0 var(--warning-color);
+        }
+
+        .alert-item.critical.latest {
+            background: rgba(239, 68, 68, 0.16);
+            box-shadow: inset 3px 0 0 var(--critical-color);
+        }
+
+        .alert-item.safe.latest {
+            background: rgba(16, 185, 129, 0.14);
+            box-shadow: inset 3px 0 0 var(--safe-color);
+        }
+
+        @keyframes feedIn {
+            from { opacity: 0; transform: translateY(-8px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
@@ -325,12 +365,13 @@
             font-weight: 700;
             text-align: center;
             border-radius: 3px;
-            padding: 0.1rem 0.3rem;
+            padding: 0.15rem 0.35rem;
             font-size: 0.75rem;
         }
         .alert-level.info { background-color: #0ea5e9; color: white; }
         .alert-level.warning { background-color: #f59e0b; color: white; }
         .alert-level.critical { background-color: #ef4444; color: white; }
+        .alert-level.safe { background-color: #10b981; color: white; }
         .alert-level.action { background-color: #8b5cf6; color: white; }
 
         .alert-msg {
@@ -340,7 +381,17 @@
         .alert-law {
             color: #94a3b8;
             font-size: 0.8rem;
-            text-align: right;
+        }
+
+        .alert-agent {
+            color: #dbeafe;
+            font-size: 0.8rem;
+        }
+
+        .alert-placeholder {
+            padding: 1rem;
+            color: #94a3b8;
+            font-size: 0.85rem;
         }
 
         /* Lower Section: Grid */
@@ -370,6 +421,26 @@
             font-size: 0.8rem;
         }
 
+        tbody tr.active-row {
+            background: rgba(59, 130, 246, 0.08);
+            box-shadow: inset 3px 0 0 var(--accent-color);
+        }
+
+        tbody tr.active-row.warning {
+            background: rgba(245, 158, 11, 0.12);
+            box-shadow: inset 3px 0 0 var(--warning-color);
+        }
+
+        tbody tr.active-row.critical {
+            background: rgba(239, 68, 68, 0.12);
+            box-shadow: inset 3px 0 0 var(--critical-color);
+        }
+
+        tbody tr.active-row.safe {
+            background: rgba(16, 185, 129, 0.1);
+            box-shadow: inset 3px 0 0 var(--safe-color);
+        }
+
         /* Action Recommendation */
         .action-list {
             display: flex;
@@ -382,9 +453,10 @@
             border: 1px solid var(--border-color);
             border-radius: 6px;
             padding: 0.75rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 0.75rem;
+            align-items: start;
         }
 
         .action-content {
@@ -404,6 +476,13 @@
             color: var(--text-muted);
         }
 
+        .action-meta {
+            display: flex;
+            gap: 0.35rem;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
         .action-priority {
             font-size: 0.75rem;
             font-weight: 700;
@@ -413,6 +492,16 @@
         }
         .action-priority.high { background-color: var(--critical-color); }
         .action-priority.medium { background-color: var(--warning-color); }
+        .action-priority.low { background-color: var(--safe-color); }
+
+        .action-role {
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0.2rem 0.45rem;
+            border-radius: 3px;
+            background: #e2e8f0;
+            color: #334155;
+        }
 
         /* Output Cards */
         .output-grid {
@@ -421,16 +510,30 @@
             gap: 1rem;
         }
 
+        .output-grid.is-hidden {
+            display: none;
+        }
+
         .doc-card {
             background-color: #f8fafc;
             border: 1px solid var(--border-color);
             border-radius: 6px;
             padding: 0.75rem;
-            display: flex;
+            display: grid;
+            grid-template-columns: auto 1fr auto;
             align-items: center;
             gap: 0.75rem;
             cursor: pointer;
             transition: all 0.2s;
+        }
+
+        .doc-card:not(.generated) {
+            cursor: default;
+        }
+
+        .doc-card.generated {
+            border-color: rgba(16, 185, 129, 0.55);
+            background-color: rgba(16, 185, 129, 0.06);
         }
 
         .doc-card:hover {
@@ -457,8 +560,41 @@
         }
 
         .doc-type {
+            display: none;
+        }
+
+        .doc-badge {
+            background: #94a3b8;
+            color: white;
             font-size: 0.7rem;
-            color: var(--text-muted);
+            padding: 2px 6px;
+            border-radius: 3px;
+            width: fit-content;
+            margin-top: 2px;
+        }
+
+        .doc-badge.is-hidden {
+            visibility: hidden;
+        }
+
+        .doc-card.generated .doc-badge {
+            background: var(--safe-color);
+        }
+
+        .doc-open-btn {
+            display: none;
+            border: 1px solid var(--accent-color);
+            background: white;
+            color: var(--accent-color);
+            padding: 0.3rem 0.55rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .doc-card.generated .doc-open-btn {
+            display: inline-block;
         }
 
         /* Utils */
@@ -570,10 +706,58 @@
             border-radius: 6px;
             max-height: 400px;
             overflow-y: auto;
-            font-family: monospace;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
             font-size: 0.85rem;
-            white-space: pre-wrap;
             margin-bottom: 1.5rem;
+        }
+
+        .doc-body h3 {
+            color: var(--primary-color);
+            font-size: 1rem;
+            margin: 0.75rem 0 0.35rem;
+        }
+
+        .doc-body h4 {
+            color: var(--secondary-color);
+            font-size: 0.9rem;
+            margin: 0.7rem 0 0.25rem;
+        }
+
+        .doc-body p,
+        .doc-body li {
+            color: #334155;
+            line-height: 1.55;
+        }
+
+        .doc-body ul,
+        .doc-body ol {
+            padding-left: 1.2rem;
+            margin: 0.35rem 0 0.75rem;
+        }
+
+        .doc-body table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0.45rem 0 0.9rem;
+            background: white;
+        }
+
+        .doc-body th,
+        .doc-body td {
+            border: 1px solid var(--border-color);
+            padding: 0.5rem 0.6rem;
+            vertical-align: top;
+        }
+
+        .doc-body th {
+            background: #e2e8f0;
+            color: var(--primary-color);
+        }
+
+        .doc-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
         }
     </style>
 </head>
@@ -606,8 +790,10 @@
                     <div style="font-size: 0.8rem; color: var(--text-muted);">Cam 01 - Warehouse Central</div>
                 </div>
                 <div class="video-container">
-                    <img src="{{ url_for('video_feed') }}" alt="Warehouse Live Feed">
-                    <div class="overlay-alert" id="live-overlay"><i class="fas fa-exclamation-triangle"></i> Monitoring Active</div>
+                    <img class="stream-feed" data-stream-src="{{ url_for('video_feed') }}" alt="Warehouse Live Feed">
+                    <button class="start-video-btn" id="start-video-btn" type="button" onclick="startVideoSystem()">
+                        <i class="fas fa-play"></i> Start Video
+                    </button>
                 </div>
             </div>
 
@@ -624,11 +810,7 @@
                             <span class="status-badge safe" id="crop01-badge">SAFE</span>
                         </div>
                         <div class="crop-img-container" style="height: 150px; overflow: hidden; position: relative;">
-                            <img src="{{ url_for('video_feed') }}" style="width: 200%; height: 200%; object-fit: cover; position: absolute; top: 0; left: 0;">
-                        </div>
-                        <div class="crop-summary">
-                            <span id="crop01-summary">PPE compliance detected</span>
-                            <button class="crop-action-btn" onclick="openDoc('sop', 'crop01')">SOP</button>
+                            <img class="stream-feed" data-stream-src="{{ url_for('video_feed') }}" style="width: 200%; height: 200%; object-fit: cover; position: absolute; top: 0; left: 0;">
                         </div>
                     </div>
                     <!-- Crop 02 -->
@@ -638,25 +820,17 @@
                             <span class="status-badge warning" id="crop02-badge">WARNING</span>
                         </div>
                         <div class="crop-img-container" style="height: 150px; overflow: hidden; position: relative;">
-                            <img src="{{ url_for('video_feed') }}" style="width: 200%; height: 200%; object-fit: cover; position: absolute; top: 0; left: -100%;">
-                        </div>
-                        <div class="crop-summary">
-                            <span id="crop02-summary">UA-13 overload detected</span>
-                            <button class="crop-action-btn" onclick="openDoc('report', 'crop02')">Report</button>
+                            <img class="stream-feed" data-stream-src="{{ url_for('video_feed') }}" style="width: 200%; height: 200%; object-fit: cover; position: absolute; top: 0; left: -100%;">
                         </div>
                     </div>
                     <!-- Crop 03 -->
-                    <div class="crop-card critical" id="crop03">
+                    <div class="crop-card safe" id="crop03">
                         <div class="crop-header">
                             <span>Crop 03</span>
-                            <span class="status-badge critical" id="crop03-badge">CRITICAL</span>
+                            <span class="status-badge safe" id="crop03-badge">SAFE</span>
                         </div>
                         <div class="crop-img-container" style="height: 150px; overflow: hidden; position: relative;">
-                            <img src="{{ url_for('video_feed') }}" style="width: 200%; height: 200%; object-fit: cover; position: absolute; top: -100%; left: 0;">
-                        </div>
-                        <div class="crop-summary">
-                            <span id="crop03-summary">Worker inside forklift trajectory</span>
-                            <button class="crop-action-btn" onclick="openDoc('risk', 'crop03')">Risk</button>
+                            <img class="stream-feed" data-stream-src="{{ url_for('video_feed') }}" style="width: 200%; height: 200%; object-fit: cover; position: absolute; top: -100%; left: 0;">
                         </div>
                     </div>
                     <!-- Crop 04 -->
@@ -666,11 +840,7 @@
                             <span class="status-badge warning" id="crop04-badge">WARNING</span>
                         </div>
                         <div class="crop-img-container" style="height: 150px; overflow: hidden; position: relative;">
-                            <img src="{{ url_for('video_feed') }}" style="width: 200%; height: 200%; object-fit: cover; position: absolute; top: -100%; left: -100%;">
-                        </div>
-                        <div class="crop-summary">
-                            <span id="crop04-summary">Dock-side worker proximity</span>
-                            <button class="crop-action-btn" onclick="openDoc('json', 'crop04')">JSON</button>
+                            <img class="stream-feed" data-stream-src="{{ url_for('video_feed') }}" style="width: 200%; height: 200%; object-fit: cover; position: absolute; top: -100%; left: -100%;">
                         </div>
                     </div>
                 </div>
@@ -678,13 +848,21 @@
         </div>
 
         <!-- Middle Section: AI Agent 위험 판단 결과 -->
-        <div class="card">
+        <div class="card alert-card">
             <div class="card-title">
-                <div class="card-title-left"><i class="fas fa-stream"></i> AI Agent 위험 판단 결과 (실시간 Alert Feed)</div>
+                <div class="card-title-left"><i class="fas fa-stream"></i> 실시간 AI Agent 위험 판단 결과</div>
                 <div style="font-size: 0.75rem; color: var(--safe-color);"><i class="fas fa-circle"></i> Monitoring active</div>
             </div>
             <div class="alert-feed" id="alert-feed-container">
-                <!-- Logs will be appended here dynamically -->
+                <div class="alert-header">
+                    <span>시간</span>
+                    <span>심각도</span>
+                    <span>Crop</span>
+                    <span>이벤트 내용</span>
+                    <span>참고 기준/법규</span>
+                    <span>Agent 판단</span>
+                </div>
+                <div class="alert-placeholder" id="alert-placeholder"></div>
             </div>
         </div>
 
@@ -693,32 +871,25 @@
             <!-- Left: 위험 판단 근거 -->
             <div class="card">
                 <div class="card-title">
-                    <div class="card-title-left"><i class="fas fa-search"></i> 위험 판단 근거 (Explainable AI)</div>
+                    <div class="card-title-left"><i class="fas fa-search"></i> 위험 판단 근거</div>
                 </div>
                 <table>
                     <thead>
                         <tr>
                             <th>위험 유형</th>
-                            <th>판단 근거</th>
-                            <th>관련 법규/기준</th>
+                            <th>현재 관측 상태</th>
+                            <th>기준/법규</th>
+                            <th>비교 결과</th>
                             <th>판정</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr id="row-forklift_collision">
-                            <td style="font-weight: 600; color: var(--critical-color);">forklift_collision</td>
-                            <td>작업자가 지게차 이동 경로 내부에 위치</td>
-                            <td>산업안전보건기준 규칙 제167조</td>
-                        </tr>
-                        <tr id="row-overload_risk">
+                    <tbody id="explainability-body">
+                        <tr class="active-row warning">
                             <td style="font-weight: 600; color: var(--warning-color);">overload_risk</td>
-                            <td>적재물 높이가 시야 기준 초과</td>
-                            <td>내부 SOP v2.1</td>
-                        </tr>
-                        <tr id="row-dock_proximity">
-                            <td style="font-weight: 600; color: var(--warning-color);">dock_proximity</td>
-                            <td>도크 인근 작업자 접근 감지</td>
-                            <td>KOSHA G-102</td>
+                            <td>Start Video 실행 대기</td>
+                            <td>Forklift Operation SOP v2.1</td>
+                            <td>영상 시작 후 상태 비교</td>
+                            <td>WARNING</td>
                         </tr>
                     </tbody>
                 </table>
@@ -727,29 +898,38 @@
             <!-- Right: 관리자 대응 조치 -->
             <div class="card">
                 <div class="card-title">
-                    <div class="card-title-left"><i class="fas fa-clipboard-list"></i> 관리자 대응 조치 (Action Recommendation)</div>
+                    <div class="card-title-left"><i class="fas fa-clipboard-list"></i> 관리자 대응 조치</div>
                 </div>
                 <div class="action-list">
                     <div class="action-item">
                         <div class="action-content">
-                            <span class="action-title">작업구역 분리 강화</span>
-                            <span class="action-desc">지게차 동선과 보행자 통로의 물리적 분리 조치</span>
+                            <span class="action-title">지게차 운전자 감속 유도</span>
+                            <span class="action-desc">Crop 1 작업 가능 구역 접근 상태 확인</span>
                         </div>
-                        <span class="action-priority high">High</span>
+                        <div class="action-meta">
+                            <span class="action-priority medium">Medium</span>
+                            <span class="action-role">지게차 운전자</span>
+                        </div>
                     </div>
                     <div class="action-item">
                         <div class="action-content">
-                            <span class="action-title">적재 높이 제한</span>
-                            <span class="action-desc">시야 확보를 위한 적재 기준 준수 여부 확인</span>
+                            <span class="action-title">작업자 위치 확인</span>
+                            <span class="action-desc">작업자가 장비 이동 가능 경로로 진입하는지 확인</span>
                         </div>
-                        <span class="action-priority medium">Medium</span>
+                        <div class="action-meta">
+                            <span class="action-priority medium">Medium</span>
+                            <span class="action-role">현장 관리자</span>
+                        </div>
                     </div>
                     <div class="action-item">
                         <div class="action-content">
-                            <span class="action-title">도크 접근 통제</span>
-                            <span class="action-desc">추락 및 충돌 위험 구역 진입 차단</span>
+                            <span class="action-title">작업구역 접근 주의 알림</span>
+                            <span class="action-desc">SOP 기준에 따른 접근 주의 알림 전송 준비</span>
                         </div>
-                        <span class="action-priority medium">Medium</span>
+                        <div class="action-meta">
+                            <span class="action-priority low">Low</span>
+                            <span class="action-role">안전 담당자</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -760,38 +940,38 @@
             <div class="card-title">
                 <div class="card-title-left"><i class="fas fa-file-download"></i> 산출물 (Output Documents)</div>
             </div>
-            <div class="output-grid">
-                <div class="doc-card" onclick="openDoc('sop')">
+            <div class="output-grid is-hidden" id="output-documents-grid">
+                <div class="doc-card" data-doc="sop" onclick="openDoc('sop')">
                     <div class="doc-icon"><i class="fas fa-file-pdf"></i></div>
                     <div class="doc-info">
                         <span class="doc-name">SOP.pdf</span>
-                        <span class="doc-type">Forklift safety procedure</span>
-                        <span class="doc-badge" style="background: #94a3b8; color: white; font-size: 0.7rem; padding: 2px 4px; border-radius: 3px; width: fit-content; margin-top: 2px;">Pending</span>
+                        <span class="doc-badge is-hidden">Pending</span>
                     </div>
+                    <button class="doc-open-btn" type="button">열기</button>
                 </div>
-                <div class="doc-card" onclick="openDoc('report')">
+                <div class="doc-card" data-doc="report" onclick="openDoc('report')">
                     <div class="doc-icon"><i class="fas fa-file-alt"></i></div>
                     <div class="doc-info">
                         <span class="doc-name">Safety_Report.pdf</span>
-                        <span class="doc-type">안전 보고서</span>
-                        <span class="doc-badge" style="background: #94a3b8; color: white; font-size: 0.7rem; padding: 2px 4px; border-radius: 3px; width: fit-content; margin-top: 2px;">Pending</span>
+                        <span class="doc-badge is-hidden">Pending</span>
                     </div>
+                    <button class="doc-open-btn" type="button">열기</button>
                 </div>
-                <div class="doc-card" onclick="openDoc('risk')">
+                <div class="doc-card" data-doc="risk" onclick="openDoc('risk')">
                     <div class="doc-icon"><i class="fas fa-file-excel"></i></div>
                     <div class="doc-info">
                         <span class="doc-name">Risk_Assessment.xlsx</span>
-                        <span class="doc-type">위험성 평가표</span>
-                        <span class="doc-badge" style="background: #94a3b8; color: white; font-size: 0.7rem; padding: 2px 4px; border-radius: 3px; width: fit-content; margin-top: 2px;">Pending</span>
+                        <span class="doc-badge is-hidden">Pending</span>
                     </div>
+                    <button class="doc-open-btn" type="button">열기</button>
                 </div>
-                <div class="doc-card" onclick="openDoc('json')">
+                <div class="doc-card" data-doc="json" onclick="openDoc('json')">
                     <div class="doc-icon"><i class="fas fa-code"></i></div>
                     <div class="doc-info">
                         <span class="doc-name">Event.json</span>
-                        <span class="doc-type">Event metadata</span>
-                        <span class="doc-badge" style="background: #94a3b8; color: white; font-size: 0.7rem; padding: 2px 4px; border-radius: 3px; width: fit-content; margin-top: 2px;">Pending</span>
+                        <span class="doc-badge is-hidden">Pending</span>
                     </div>
+                    <button class="doc-open-btn" type="button">열기</button>
                 </div>
             </div>
         </div>
@@ -811,8 +991,11 @@
     <div class="popup-overlay" id="doc-popup">
         <div class="popup-content doc-viewer">
             <div class="popup-title" id="doc-title">Document Preview</div>
-            <div class="doc-body" id="doc-body" style="white-space: pre-wrap; font-family: monospace; text-align: left; background: #f8fafc; color: #334155; padding: 15px; border-radius: 4px; border: 1px solid #e2e8f0; margin-bottom: 15px; max-height: 400px; overflow-y: auto;">Loading...</div>
-            <button class="popup-btn" onclick="closeDoc()">닫기</button>
+            <div class="doc-body" id="doc-body">Loading...</div>
+            <div class="doc-actions">
+                <button class="popup-btn" id="download-doc-btn" onclick="downloadCurrentDoc()">다운로드하기</button>
+                <button class="popup-btn" onclick="closeDoc()">닫기</button>
+            </div>
         </div>
     </div>
 
@@ -844,11 +1027,21 @@
             
             if (!card) return;
 
+            if (cropId === 'crop03') {
+                status = 'SAFE';
+                summary = '';
+            } else if (cropId === 'crop02' || cropId === 'crop04') {
+                status = 'WARNING';
+                summary = '';
+            }
+
             // Update classes
             card.className = `crop-card ${status.toLowerCase()}`;
             badge.className = `status-badge ${status.toLowerCase()}`;
             badge.textContent = status;
-            summaryEl.textContent = summary;
+            if (summaryEl) {
+                summaryEl.textContent = summary;
+            }
 
             // Handle flashing
             if (status === 'WARNING' || status === 'CRITICAL') {
@@ -858,28 +1051,332 @@
             }
         }
 
+        function updateCrop1Timeline(elapsed) {
+            let status = 'SAFE';
+
+            if (elapsed <= 13) {
+                status = 'WARNING';
+            } else if (elapsed <= 37) {
+                status = 'CRITICAL';
+            } else if (elapsed <= 48) {
+                status = 'WARNING';
+            } else if (elapsed <= 60) {
+                status = 'SAFE';
+            } else if (elapsed <= 67) {
+                status = 'WARNING';
+            }
+
+            updateCropUI('crop01', status, '');
+        }
+
         // Connect to SocketIO
         const socket = io();
         let sentAlerts = new Set();
         let currentPhase = 0;
+        let videoStarted = false;
+        let timelineElapsed = 0;
+        let currentTimelineKey = '';
+        let documentsGenerated = false;
+
+        const timelineStates = [
+            {
+                key: 'warning-entry',
+                start: 0,
+                end: 14,
+                severity: 'WARNING',
+                cropSummary: '지게차 작업 구역 진입 및 작업자 근접 가능성 감지',
+                riskType: 'worker_forklift_proximity',
+                observed: '작업자가 지게차 작업 가능 구역 인근에 위치',
+                standard: 'Forklift Operation SOP v2.1',
+                comparison: '접근 주의 필요',
+                actions: [
+                    { title: '지게차 운전자 감속 유도', desc: 'Crop 1 작업 가능 구역에서 장비 접근 속도 저감', priority: 'Medium', role: '지게차 운전자', state: 'Sent' },
+                    { title: '작업자 위치 확인', desc: '작업자가 지게차 운행 가능 경로로 진입하는지 확인', priority: 'Medium', role: '현장 관리자', state: 'Pending' },
+                    { title: '작업구역 접근 주의 알림', desc: '접근 주의 방송 및 현장 알림 전송', priority: 'Low', role: '안전 담당자', state: 'Sent' }
+                ]
+            },
+            {
+                key: 'critical-overlap',
+                start: 14,
+                end: 38,
+                severity: 'CRITICAL',
+                cropSummary: '작업자와 지게차 이동 경로 중첩, 충돌 위험 증가',
+                riskType: 'forklift_pedestrian_collision',
+                observed: '작업자가 지게차 이동 경로 내부에 위치',
+                standard: '산업안전보건기준에 관한 규칙 제167조',
+                comparison: '작업자 접근 제한 기준 위반 가능',
+                actions: [
+                    { title: '지게차 즉시 정지', desc: '운행 경로 중첩 해소 전까지 장비 정지 유지', priority: 'High', role: '지게차 운전자', state: 'Sent' },
+                    { title: '작업자 안전구역 이동', desc: '작업자를 보행자 안전구역으로 즉시 이동', priority: 'High', role: '현장 관리자', state: 'Pending' },
+                    { title: '작업구역 임시 통제', desc: '충돌 가능 구역 출입 제한 및 우회 동선 확보', priority: 'High', role: '안전 담당자', state: 'Sent' },
+                    { title: '현장 관리자 확인 요청', desc: '관리자 현장 확인 후 운행 재개 여부 판단', priority: 'High', role: '현장 관리자', state: 'Pending' }
+                ]
+            },
+            {
+                key: 'warning-recovering',
+                start: 38,
+                end: 49,
+                severity: 'WARNING',
+                cropSummary: '작업자-지게차 거리 회복 중이나 위험구역 내 잔류',
+                riskType: 'residual_collision_risk',
+                observed: '작업자-지게차 거리 회복 중이나 위험구역 인근 잔류',
+                standard: 'KOSHA Guide G-102',
+                comparison: '추가 모니터링 필요',
+                actions: [
+                    { title: '작업자 이동 완료 여부 확인', desc: '작업자가 위험구역 밖으로 완전히 이동했는지 확인', priority: 'Medium', role: '현장 관리자', state: 'Pending' },
+                    { title: '지게차 재출발 전 주변 확인', desc: '장비 재출발 전 좌우 및 후방 확인 절차 수행', priority: 'Medium', role: '지게차 운전자', state: 'Pending' },
+                    { title: '동일 구역 재접근 모니터링', desc: 'Crop 1 내 재접근 여부를 실시간 추적', priority: 'Low', role: '안전 담당자', state: 'Sent' }
+                ]
+            },
+            {
+                key: 'safe-separated',
+                start: 49,
+                end: 61,
+                severity: 'SAFE',
+                cropSummary: '작업자와 지게차 동선 분리, 즉시 위험 없음',
+                riskType: 'separated_operation',
+                observed: '작업자와 지게차 동선 분리',
+                standard: '내부 작업구역 기준',
+                comparison: '기준 충족',
+                actions: [
+                    { title: '정상 모니터링 유지', desc: '동선 분리 상태 유지 여부 확인', priority: 'Low', role: '안전 담당자', state: 'Completed' },
+                    { title: '이벤트 로그 저장', desc: 'Crop 1 위험 전환 이력 저장', priority: 'Low', role: '현장 관리자', state: 'Completed' },
+                    { title: '추가 조치 없음', desc: '즉시 조치 대상 없음', priority: 'Low', role: '안전 담당자', state: 'Completed' }
+                ]
+            },
+            {
+                key: 'warning-dock',
+                start: 61,
+                end: 68,
+                severity: 'WARNING',
+                cropSummary: '도크/통로 인근 작업자 재접근',
+                riskType: 'dock_proximity',
+                observed: '도크/통로 인근 작업자 접근',
+                standard: 'KOSHA Guide G-102',
+                comparison: '접근 주의 필요',
+                actions: [
+                    { title: '도크 인근 작업자 접근 알림', desc: '도크 및 통로 접근 주의 알림 전송', priority: 'Medium', role: '안전 담당자', state: 'Sent' },
+                    { title: '통로 확보 상태 확인', desc: '장비 운행 통로와 보행 동선 분리 상태 확인', priority: 'Medium', role: '현장 관리자', state: 'Pending' },
+                    { title: '접근 제한 표지 확인', desc: '도크 주변 접근 제한 표지 및 안내 상태 점검', priority: 'Low', role: '현장 관리자', state: 'Pending' }
+                ]
+            },
+            {
+                key: 'safe-monitoring',
+                start: 68,
+                end: Infinity,
+                severity: 'SAFE',
+                cropSummary: '작업자 안전구역 이동 및 모니터링 유지',
+                riskType: 'normal_monitoring',
+                observed: '위험 객체 간 동선 분리',
+                standard: '내부 SOP v2.1',
+                comparison: '정상',
+                actions: [
+                    { title: '안전 상태 유지', desc: 'Crop 1 정상 모니터링 상태 유지', priority: 'Low', role: '안전 담당자', state: 'Completed' },
+                    { title: '로그 저장', desc: '최종 안전 전환 로그 저장', priority: 'Low', role: '현장 관리자', state: 'Completed' },
+                    { title: '후속 보고 대기', desc: '산출물 검토 후 보고 절차 대기', priority: 'Low', role: '안전 담당자', state: 'Pending' }
+                ]
+            }
+        ];
+
+        const alertSchedule = [
+            { id: 'a04', time: 4, severity: 'WARNING', crop: 'Crop 1', message: '지게차 작업구역 진입 및 작업자 근접 가능성 감지', law: 'Forklift Operation SOP v2.1', judgement: '작업자 이동 경로와 장비 운행 가능 구역이 근접함' },
+            { id: 'a14', time: 14, severity: 'CRITICAL', crop: 'Crop 1', message: '작업자-지게차 이동 경로 중첩 감지', law: '산업안전보건기준에 관한 규칙 제167조', judgement: '작업자가 지게차 운행 경로 내부에 위치하여 충돌 위험이 높음' },
+            { id: 'a25', time: 25, severity: 'CRITICAL', crop: 'Crop 1', message: 'Collision Zone 내 작업자 체류 지속', law: 'KOSHA Guide G-102', judgement: '장비-인원 분리 기준 위반 가능성이 높음' },
+            { id: 'a38', time: 38, severity: 'WARNING', crop: 'Crop 1', message: '작업자와 지게차 간 거리 회복 중', law: '내부 SOP v2.1', judgement: '위험도는 감소했으나 구역 내 모니터링 필요' },
+            { id: 'a49', time: 49, severity: 'SAFE', crop: 'Crop 1', message: '작업자와 지게차 동선 분리 확인', law: '내부 작업구역 기준', judgement: '즉시 위험 없음, 로그 저장' },
+            { id: 'a61', time: 61, severity: 'WARNING', crop: 'Crop 1', message: '도크/통로 인근 작업자 재접근 감지', law: 'KOSHA Guide G-102', judgement: '작업자 접근 제한 구역 모니터링 필요' },
+            { id: 'a68', time: 68, severity: 'SAFE', crop: 'Crop 1', message: '작업자 안전구역 이동 확인', law: '내부 SOP v2.1', judgement: '정상 모니터링 상태' }
+        ];
+
+        function startVideoSystem() {
+            if (videoStarted) return;
+            videoStarted = true;
+            currentPhase = 0;
+            currentTimelineKey = '';
+            timelineElapsed = 0;
+            documentsGenerated = false;
+            sentAlerts.clear();
+            resetAlertFeed();
+            resetDocumentCards();
+            handleTimelineUpdate(0);
+
+            document.querySelectorAll('.stream-feed').forEach((img) => {
+                const streamSrc = img.dataset.streamSrc;
+                if (streamSrc && !img.src) {
+                    img.src = streamSrc;
+                }
+            });
+
+            const startButton = document.getElementById('start-video-btn');
+            if (startButton) {
+                startButton.classList.add('is-hidden');
+            }
+        }
 
         socket.on('timeline_state', function(data) {
-            const elapsed = data.elapsed;
-            const phase = data.phase;
-            
-            // Update live overlay
-            const overlay = document.getElementById('live-overlay');
-            overlay.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Monitoring Active (${elapsed.toFixed(1)}s)`;
-            
-            // Handle phase transitions
-            if (phase !== currentPhase) {
-                currentPhase = phase;
-                updatePhaseUI(phase);
-            }
-            
-            // Handle specific alerts based on time
-            checkAndSendAlerts(elapsed);
+            if (!videoStarted) return;
+            const elapsed = Number(data.elapsed || 0);
+            if (elapsed + 0.5 < timelineElapsed) return;
+            timelineElapsed = Math.max(timelineElapsed, elapsed);
+            handleTimelineUpdate(timelineElapsed);
         });
+
+        function handleTimelineUpdate(elapsed) {
+            const state = getTimelineState(elapsed);
+            updateCropUI('crop01', state.severity, state.cropSummary);
+            updateCropUI('crop02', 'WARNING', '');
+            updateCropUI('crop03', 'SAFE', '');
+            updateCropUI('crop04', 'WARNING', '');
+
+            if (state.key !== currentTimelineKey) {
+                currentTimelineKey = state.key;
+                renderExplainability(state);
+                renderActions(state.actions);
+            }
+
+            appendScheduledAlerts(elapsed);
+            updateCriticalBanner(state);
+            updateDocumentCards(elapsed);
+        }
+
+        function getTimelineState(elapsed) {
+            return timelineStates.find((state) => elapsed >= state.start && elapsed < state.end) || timelineStates[timelineStates.length - 1];
+        }
+
+        function resetAlertFeed() {
+            container.querySelectorAll('.alert-item').forEach((item) => item.remove());
+            const placeholder = document.getElementById('alert-placeholder');
+            if (placeholder) {
+                placeholder.textContent = '';
+                placeholder.style.display = 'block';
+            }
+        }
+
+        function appendScheduledAlerts(elapsed) {
+            alertSchedule.forEach((event) => {
+                if (elapsed >= event.time && !sentAlerts.has(event.id)) {
+                    appendAlertEvent(event);
+                    sentAlerts.add(event.id);
+                }
+            });
+        }
+
+        function appendAlertEvent(event) {
+            const placeholder = document.getElementById('alert-placeholder');
+            if (placeholder) placeholder.style.display = 'none';
+            container.querySelectorAll('.alert-item.latest').forEach((item) => item.classList.remove('latest'));
+
+            const levelClass = event.severity.toLowerCase();
+            const div = document.createElement('div');
+            div.className = `alert-item ${levelClass} latest`;
+            div.innerHTML = `
+                <span class="alert-time">${formatKoreanClock()}</span>
+                <span class="alert-level ${levelClass}">${event.severity}</span>
+                <span class="alert-crop">${event.crop}</span>
+                <span class="alert-msg">${event.message}</span>
+                <span class="alert-law">${event.law}</span>
+                <span class="alert-agent">${event.judgement}</span>
+            `;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function formatKoreanClock() {
+            return new Intl.DateTimeFormat('ko-KR', {
+                timeZone: 'Asia/Seoul',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            }).format(new Date());
+        }
+
+        function renderExplainability(state) {
+            const tbody = document.getElementById('explainability-body');
+            const severityClass = state.severity.toLowerCase();
+            const colorVar = state.severity === 'CRITICAL' ? 'var(--critical-color)' : state.severity === 'WARNING' ? 'var(--warning-color)' : 'var(--safe-color)';
+            tbody.innerHTML = `
+                <tr class="active-row ${severityClass}">
+                    <td style="font-weight: 600; color: ${colorVar};">${state.riskType}</td>
+                    <td>${state.observed}</td>
+                    <td>${state.standard}</td>
+                    <td>${state.comparison}</td>
+                    <td style="font-weight: 700; color: ${colorVar};">${state.severity}</td>
+                </tr>
+            `;
+        }
+
+        function renderActions(actions) {
+            const actionList = document.querySelector('.action-list');
+            actionList.innerHTML = actions.map((action) => {
+                const priorityClass = action.priority.toLowerCase();
+                return `
+                    <div class="action-item">
+                        <div class="action-content">
+                            <span class="action-title">${action.title}</span>
+                            <span class="action-desc">${action.desc}</span>
+                        </div>
+                        <div class="action-meta">
+                            <span class="action-priority ${priorityClass}">${action.priority}</span>
+                            <span class="action-role">${action.role}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateCriticalBanner(state) {
+            if (state.severity === 'CRITICAL') {
+                document.body.classList.add('dashboard-critical');
+                showTopBanner('CRITICAL: Crop 1 작업자-지게차 이동 경로 중첩 감지. 즉시 정지 및 작업자 안전구역 이동 필요.');
+            } else {
+                document.body.classList.remove('dashboard-critical');
+                hideTopBanner();
+            }
+        }
+
+        function resetDocumentCards() {
+            const outputGrid = document.getElementById('output-documents-grid');
+            if (outputGrid) outputGrid.classList.add('is-hidden');
+
+            document.querySelectorAll('.doc-card').forEach((card) => {
+                card.classList.remove('generated');
+                const badge = card.querySelector('.doc-badge');
+                if (badge) {
+                    badge.textContent = 'Pending';
+                    badge.classList.add('is-hidden');
+                }
+            });
+        }
+
+        function updateDocumentCards(elapsed) {
+            if (elapsed < 16) return;
+
+            const outputGrid = document.getElementById('output-documents-grid');
+            if (outputGrid) outputGrid.classList.remove('is-hidden');
+
+            if (elapsed >= 40) {
+                documentsGenerated = true;
+                document.querySelectorAll('.doc-card').forEach((card) => {
+                    card.classList.add('generated');
+                    const badge = card.querySelector('.doc-badge');
+                    if (badge) {
+                        badge.classList.remove('is-hidden');
+                        badge.textContent = 'Generated';
+                    }
+                });
+                return;
+            }
+
+            document.querySelectorAll('.doc-card').forEach((card) => {
+                card.classList.remove('generated');
+                const badge = card.querySelector('.doc-badge');
+                if (badge) {
+                    badge.classList.remove('is-hidden');
+                    badge.textContent = 'Pending';
+                }
+            });
+        }
 
         function updatePhaseUI(phase) {
             const tbody = document.querySelector('table tbody');
@@ -921,9 +1418,6 @@
                         badge.style.background = '#94a3b8';
                     }
                 });
-                
-                sentAlerts.clear();
-                container.innerHTML = ''; // Clear feed on loop
                 
                 const banner = document.getElementById('top-alert-banner');
                 if (banner) banner.style.display = 'none';
@@ -1100,30 +1594,129 @@
 
         const docs = {
             sop: {
-                title: `Forklift Operation SOP v2.1`,
-                content: `SECTION 1. 작업 전 점검\n* 지게차 경고등, 후진 경보음, 브레이크 상태 확인\n* 적재물 고정 상태 및 시야 확보 여부 확인\n* 작업 구역 내 보행자 동선 확인\n\nSECTION 2. 운행 기준\n* 작업자 접근 구역에서는 즉시 감속\n* 적재물이 시야를 가릴 경우 유도자 배치\n* 보행자와 지게차 동선이 교차할 경우 지게차 우선 정지\n\nSECTION 3. 위험 상황 대응\n* Collision zone overlap 발생 시 즉시 정지\n* 작업자를 안전구역으로 이동시킨 후 운행 재개\n* 반복 발생 시 관리자에게 보고하고 작업 동선을 재설정`
+                title: `작업자-지게차 근접 위험 대응 SOP`,
+                fileName: 'SOP.pdf',
+                content: `작업자-지게차 근접 위험 대응 SOP\n\n1. 이벤트 정보\n항목\t내용\n위험 수준\tWARNING\nCrop Zone\tCrop 1\n이벤트 유형\tworker_forklift_proximity\n관련 기준\t산업안전보건기준에 관한 규칙 제167조 / KOSHA Guide G-102 / 내부 SOP v2.1\n\n2. 상황 설명\nAI Agent가 작업자와 지게차의 이동 경로가 근접하는 상황을 감지하였다. 현재 작업자는 지게차 예상 운행 경로 인근에 위치하며, 추가 접근 시 동선 중첩 및 충돌 위험으로 확대될 가능성이 있다.\n\n3. 즉시 조치 절차\n1단계 - 운전자 감속\n- 지게차 속도를 즉시 감속한다.\n- 경고등 및 후진 경고음을 활성화한다.\n- 작업자 위치가 확인될 때까지 가속을 제한한다.\n\n2단계 - 작업자 위치 확인\n- 작업자의 현재 위치와 이동 방향을 확인한다.\n- 작업자가 장비 이동 경로 내부로 진입하는지 확인한다.\n- 적재물 또는 구조물로 인해 시야가 제한되는지 확인한다.\n\n3단계 - 작업구역 통제 준비\n아래 조건 중 하나라도 발생하면 즉시 CRITICAL 대응으로 전환한다.\n- 작업자가 지게차 이동 경로 내부로 진입\n- 작업자와 지게차 동선 중첩 발생\n- Collision Zone 접근 또는 진입\n- 운전자 시야 제한으로 작업자 확인 불가\n\n4. 관리자 확인 항목\n확인 항목\t조치 기준\n작업자 접근 여부\t접근 지속 시 이동 유도\n장비 감속 여부\t감속 미확인 시 즉시 무전 지시\n통로 확보 상태\t적재물·장애물 존재 시 정리\n접근 제한 표시\t미흡 시 임시 통제선 설치\n\n5. 후속 모니터링\nAI Agent는 조치 이후 작업자 재접근, 지게차 재가속, 동선 중첩 여부를 지속적으로 모니터링하며, 동일 Crop에서 위험도가 상승할 경우 관리자에게 재알림을 전송한다.`,
+                html: `
+                    <h3>1. 이벤트 정보</h3>
+                    <table><tbody>
+                        <tr><th>항목</th><th>내용</th></tr>
+                        <tr><td>위험 수준</td><td>WARNING</td></tr>
+                        <tr><td>Crop Zone</td><td>Crop 1</td></tr>
+                        <tr><td>이벤트 유형</td><td>worker_forklift_proximity</td></tr>
+                        <tr><td>관련 기준</td><td>산업안전보건기준에 관한 규칙 제167조 / KOSHA Guide G-102 / 내부 SOP v2.1</td></tr>
+                    </tbody></table>
+                    <h3>2. 상황 설명</h3>
+                    <p>AI Agent가 작업자와 지게차의 이동 경로가 근접하는 상황을 감지하였다. 현재 작업자는 지게차 예상 운행 경로 인근에 위치하며, 추가 접근 시 동선 중첩 및 충돌 위험으로 확대될 가능성이 있다.</p>
+                    <h3>3. 즉시 조치 절차</h3>
+                    <h4>1단계 - 운전자 감속</h4>
+                    <ul><li>지게차 속도를 즉시 감속한다.</li><li>경고등 및 후진 경고음을 활성화한다.</li><li>작업자 위치가 확인될 때까지 가속을 제한한다.</li></ul>
+                    <h4>2단계 - 작업자 위치 확인</h4>
+                    <ul><li>작업자의 현재 위치와 이동 방향을 확인한다.</li><li>작업자가 장비 이동 경로 내부로 진입하는지 확인한다.</li><li>적재물 또는 구조물로 인해 시야가 제한되는지 확인한다.</li></ul>
+                    <h4>3단계 - 작업구역 통제 준비</h4>
+                    <p>아래 조건 중 하나라도 발생하면 즉시 CRITICAL 대응으로 전환한다.</p>
+                    <ul><li>작업자가 지게차 이동 경로 내부로 진입</li><li>작업자와 지게차 동선 중첩 발생</li><li>Collision Zone 접근 또는 진입</li><li>운전자 시야 제한으로 작업자 확인 불가</li></ul>
+                    <h3>4. 관리자 확인 항목</h3>
+                    <table><tbody>
+                        <tr><th>확인 항목</th><th>조치 기준</th></tr>
+                        <tr><td>작업자 접근 여부</td><td>접근 지속 시 이동 유도</td></tr>
+                        <tr><td>장비 감속 여부</td><td>감속 미확인 시 즉시 무전 지시</td></tr>
+                        <tr><td>통로 확보 상태</td><td>적재물·장애물 존재 시 정리</td></tr>
+                        <tr><td>접근 제한 표시</td><td>미흡 시 임시 통제선 설치</td></tr>
+                    </tbody></table>
+                    <h3>5. 후속 모니터링</h3>
+                    <p>AI Agent는 조치 이후 작업자 재접근, 지게차 재가속, 동선 중첩 여부를 지속적으로 모니터링하며, 동일 Crop에서 위험도가 상승할 경우 관리자에게 재알림을 전송한다.</p>`
             },
             report: {
-                title: `Safety Event Report`,
-                content: `Event Summary:\n* Event ID: EVT-20260509-142731\n* Camera: CAM-01\n* Crop Zone: Crop 03\n* Event Type: forklift_pedestrian_collision\n* Severity: CRITICAL\n* Time: 14:27:31\n\nDetected Evidence:\n* Object Pair: forklift / person\n* Condition: worker inside forklift movement path\n* Context: overload visibility risk previously detected in Crop 02\n\nMatched Regulations:\n* 산업안전보건기준에 관한 규칙 제167조\n* KOSHA Guide G-102\n* Forklift Operation SOP v2.1\n\nRecommended Action:\n* 지게차 즉시 정지\n* 작업자 안전구역 이동\n* 작업구역 임시 통제\n* 관리자 현장 확인\n\nMonitoring Note:\n조치 후 동일 구역 재진입 여부를 5분간 모니터링한다.`
+                title: `Safety Report`,
+                fileName: 'Safety_Report.pdf',
+                content: `Safety Report\n\n1. 이벤트 개요\n항목\t내용\nEvent ID\tEVT-20260510-WARN-001\nCamera\tCAM-01\nCrop Zone\tCrop 1\n위험 수준\tWARNING\n이벤트 유형\tworker_forklift_proximity\n상태\tMonitoring Required\n\n2. 이벤트 설명\nAI Agent가 작업자와 지게차의 이동 경로가 근접하는 상황을 감지하였다. 현재 작업자는 지게차 운행 가능 경로 인근에 위치하고 있으며, 작업자 이동 방향과 장비 진행 방향이 부분적으로 중첩될 가능성이 있다.\n\n즉시 충돌로 판단되지는 않지만, 작업자 접근이 지속되거나 지게차가 동일 방향으로 이동할 경우 CRITICAL 단계로 상승할 수 있다.\n\n3. 감지 근거\n구분\t결과\nperson 탐지\t확인\nforklift 탐지\t확인\n이동 경로 근접\t감지\nZone overlap\t미발생\n충돌 가능성\t증가 추세\n\n4. 의미 기반 위험 분석\n항목\t결과\nTop Hazard\tworker_forklift_proximity\nSimilarity Score\t0.74\n위험 설명\t작업자 접근으로 인한 잠재 충돌 위험\n\n5. 관련 기준 및 비교 결과\n기준\t비교 결과\n산업안전보건기준에 관한 규칙 제167조\t작업자 접근 제한 및 통로 확보 필요\nKOSHA Guide G-102\t작업자-장비 안전거리 유지 필요\n내부 SOP v2.1\t감속 및 접근 모니터링 단계\n\n6. AI Agent 판단\n현재 상태는 WARNING 단계로 분류된다. 작업자와 지게차의 직접적인 충돌 구간 진입은 아직 확인되지 않았으나, 두 객체의 이동 경로가 근접하고 있어 안전관리자의 모니터링이 필요하다.\n\n7. 권장 대응 조치\n- 지게차 감속 유지\n- 작업자 이동 경로 확인\n- 작업자 접근 구역 안내\n- 통로 내 장애물 및 적재물 상태 점검\n- 동일 Crop 내 위험도 상승 여부 지속 모니터링\n\n8. Monitoring Note\nAI Agent는 이후 프레임에서 작업자 이동 방향 변화, 작업자-지게차 거리 감소, Collision Zone 진입 여부를 지속적으로 추적한다.`,
+                html: `
+                    <h3>1. 이벤트 개요</h3>
+                    <table><tbody>
+                        <tr><th>항목</th><th>내용</th></tr>
+                        <tr><td>Event ID</td><td>EVT-20260510-WARN-001</td></tr>
+                        <tr><td>Camera</td><td>CAM-01</td></tr>
+                        <tr><td>Crop Zone</td><td>Crop 1</td></tr>
+                        <tr><td>위험 수준</td><td>WARNING</td></tr>
+                        <tr><td>이벤트 유형</td><td>worker_forklift_proximity</td></tr>
+                        <tr><td>상태</td><td>Monitoring Required</td></tr>
+                    </tbody></table>
+                    <h3>2. 이벤트 설명</h3>
+                    <p>AI Agent가 작업자와 지게차의 이동 경로가 근접하는 상황을 감지하였다. 현재 작업자는 지게차 운행 가능 경로 인근에 위치하고 있으며, 작업자 이동 방향과 장비 진행 방향이 부분적으로 중첩될 가능성이 있다.</p>
+                    <p>즉시 충돌로 판단되지는 않지만, 작업자 접근이 지속되거나 지게차가 동일 방향으로 이동할 경우 CRITICAL 단계로 상승할 수 있다.</p>
+                    <h3>3. 감지 근거</h3>
+                    <table><tbody><tr><th>구분</th><th>결과</th></tr><tr><td>person 탐지</td><td>확인</td></tr><tr><td>forklift 탐지</td><td>확인</td></tr><tr><td>이동 경로 근접</td><td>감지</td></tr><tr><td>Zone overlap</td><td>미발생</td></tr><tr><td>충돌 가능성</td><td>증가 추세</td></tr></tbody></table>
+                    <h3>4. 의미 기반 위험 분석</h3>
+                    <table><tbody><tr><th>항목</th><th>결과</th></tr><tr><td>Top Hazard</td><td>worker_forklift_proximity</td></tr><tr><td>Similarity Score</td><td>0.74</td></tr><tr><td>위험 설명</td><td>작업자 접근으로 인한 잠재 충돌 위험</td></tr></tbody></table>
+                    <h3>5. 관련 기준 및 비교 결과</h3>
+                    <table><tbody><tr><th>기준</th><th>비교 결과</th></tr><tr><td>산업안전보건기준에 관한 규칙 제167조</td><td>작업자 접근 제한 및 통로 확보 필요</td></tr><tr><td>KOSHA Guide G-102</td><td>작업자-장비 안전거리 유지 필요</td></tr><tr><td>내부 SOP v2.1</td><td>감속 및 접근 모니터링 단계</td></tr></tbody></table>
+                    <h3>6. AI Agent 판단</h3>
+                    <p>현재 상태는 WARNING 단계로 분류된다. 작업자와 지게차의 직접적인 충돌 구간 진입은 아직 확인되지 않았으나, 두 객체의 이동 경로가 근접하고 있어 안전관리자의 모니터링이 필요하다.</p>
+                    <h3>7. 권장 대응 조치</h3>
+                    <ul><li>지게차 감속 유지</li><li>작업자 이동 경로 확인</li><li>작업자 접근 구역 안내</li><li>통로 내 장애물 및 적재물 상태 점검</li><li>동일 Crop 내 위험도 상승 여부 지속 모니터링</li></ul>
+                    <h3>8. Monitoring Note</h3>
+                    <p>AI Agent는 이후 프레임에서 작업자 이동 방향 변화, 작업자-지게차 거리 감소, Collision Zone 진입 여부를 지속적으로 추적한다.</p>`
             },
             risk: {
-                title: `Risk Assessment`,
-                content: `작업명 / 위험요인 / 가능성(A) / 중대성(B) / 위험도(A×B) / 판정 / 개선조치\n\n1.\n작업명: 지게차 운행\n위험요인: 지게차-보행자 동선 중첩\n가능성: 4\n중대성: 5\n위험도: 20\n판정: High\n개선조치: 작업구역 분리 및 지게차 정지 기준 강화\n\n2.\n작업명: 적재 작업\n위험요인: 과적에 따른 시야 제한\n가능성: 3\n중대성: 4\n위험도: 12\n판정: Medium\n개선조치: 적재 높이 제한 및 유도자 배치\n\n3.\n작업명: 도크 작업\n위험요인: 도크 인근 작업자 접근\n가능성: 3\n중대성: 3\n위험도: 9\n판정: Medium\n개선조치: 도크 주변 접근 통제 및 경고 표지 강화`
+                title: `위험성 평가`,
+                fileName: 'Risk_Assessment.xlsx',
+                content: `작업명\t위험요인\t위험 상황 설명\t가능성(A)\t중대성(B)\t위험도(A×B)\t판정\t현재 관리대책\t개선조치\n지게차 운행\t작업자 접근 위험\t작업자가 지게차 이동 경로 인근에 접근\t3\t4\t12\tMedium\t경고등 및 접근 표지 운영\t작업자 접근 제한 강화\n통로 이동\t장비-작업자 혼재\t작업자와 장비 이동 동선이 근접\t3\t3\t9\tMedium\t통로 구분 표시\t작업자 이동 유도 강화\n적재 작업\t시야 제한 가능성\t적재물로 인해 작업자 시야 일부 제한\t2\t3\t6\tLow\t적재 높이 기준 운영\t적재 상태 점검 강화\n도크 주변 작업\t접근 위험\t작업자가 접근 제한 구역 인근에 체류\t2\t4\t8\tLow\t접근 통제선 운영\t접근 경고 방송 실시`,
+                html: `
+                    <table>
+                        <thead><tr><th>작업명</th><th>위험요인</th><th>위험 상황 설명</th><th>가능성(A)</th><th>중대성(B)</th><th>위험도(A×B)</th><th>판정</th><th>현재 관리대책</th><th>개선조치</th></tr></thead>
+                        <tbody>
+                            <tr><td>지게차 운행</td><td>작업자 접근 위험</td><td>작업자가 지게차 이동 경로 인근에 접근</td><td>3</td><td>4</td><td>12</td><td>Medium</td><td>경고등 및 접근 표지 운영</td><td>작업자 접근 제한 강화</td></tr>
+                            <tr><td>통로 이동</td><td>장비-작업자 혼재</td><td>작업자와 장비 이동 동선이 근접</td><td>3</td><td>3</td><td>9</td><td>Medium</td><td>통로 구분 표시</td><td>작업자 이동 유도 강화</td></tr>
+                            <tr><td>적재 작업</td><td>시야 제한 가능성</td><td>적재물로 인해 작업자 시야 일부 제한</td><td>2</td><td>3</td><td>6</td><td>Low</td><td>적재 높이 기준 운영</td><td>적재 상태 점검 강화</td></tr>
+                            <tr><td>도크 주변 작업</td><td>접근 위험</td><td>작업자가 접근 제한 구역 인근에 체류</td><td>2</td><td>4</td><td>8</td><td>Low</td><td>접근 통제선 운영</td><td>접근 경고 방송 실시</td></tr>
+                        </tbody>
+                    </table>`
             },
             json: {
-                title: `Event.json`,
-                content: `{\n  "event_id": "EVT-20260509-142731",\n  "timestamp": "2026-05-09T14:27:31",\n  "camera_id": "CAM_01",\n  "crop_zone": "Crop_03",\n  "risk_level": "CRITICAL",\n  "event_type": "forklift_pedestrian_collision",\n  "crop_evidence": {\n    "objects": ["forklift", "person"],\n    "reason": "worker_inside_forklift_trajectory",\n    "zone_overlap": true\n  },\n  "semantic_evidence": {\n    "top_hazard": "forklift_pedestrian_collision",\n    "similarity": 0.92,\n    "matched_prompt": "Worker detected inside forklift movement trajectory"\n  },\n  "rule_evidence": {\n    "matched_rules": [\n      "산업안전보건기준에 관한 규칙 제167조",\n      "KOSHA Guide G-102",\n      "Forklift Operation SOP v2.1"\n    ],\n    "violation_status": "possible_violation"\n  },\n  "recommended_actions": [\n    "지게차 즉시 정지",\n    "작업자 안전구역 이동",\n    "작업구역 임시 통제",\n    "관리자 현장 확인"\n  ]\n}`
+                title: `Event JSON Preview`,
+                fileName: 'Event.json',
+                content: `{\n  "event_id": "EVT-20260510-CROP1-001",\n  "timestamp": "2026-05-10T14:27:31",\n  "camera_id": "CAM_01",\n  "crop_zone": "Crop_1",\n  "risk_level": "CRITICAL",\n  "event_type": "forklift_pedestrian_collision",\n  "critical_window": "00:14-00:37",\n  "crop_evidence": {\n    "objects": ["forklift", "person"],\n    "reason": "worker_inside_forklift_trajectory",\n    "zone_overlap": true\n  },\n  "semantic_evidence": {\n    "top_hazard": "forklift_pedestrian_collision",\n    "matched_prompt": "작업자가 지게차 이동 경로 내부에 위치한 장면"\n  },\n  "rule_evidence": {\n    "matched_rules": [\n      "산업안전보건기준에 관한 규칙 제167조",\n      "KOSHA Guide G-102",\n      "Forklift Operation SOP v2.1"\n    ],\n    "judgement": "possible_violation"\n  },\n  "recommended_actions": [\n    "지게차 즉시 정지",\n    "작업자 안전구역 이동",\n    "작업구역 임시 통제",\n    "관리자 현장 확인"\n  ]\n}`
             }
         };
 
+        let currentDocType = null;
+
         function openDoc(type) {
             const doc = docs[type];
+            const card = document.querySelector(`.doc-card[data-doc="${type}"]`);
+            if (!card || !card.classList.contains('generated')) return;
+
             if (doc) {
+                currentDocType = type;
                 document.getElementById('doc-title').textContent = doc.title;
-                document.getElementById('doc-body').textContent = doc.content;
+                const body = document.getElementById('doc-body');
+                if (doc.html) {
+                    body.innerHTML = doc.html;
+                } else {
+                    body.textContent = doc.content;
+                }
                 document.getElementById('doc-popup').style.display = 'flex';
             }
+        }
+
+        function downloadCurrentDoc() {
+            if (!currentDocType || !docs[currentDocType]) return;
+            const doc = docs[currentDocType];
+            const mimeType = currentDocType === 'risk'
+                ? 'application/vnd.ms-excel;charset=utf-8'
+                : currentDocType === 'json'
+                    ? 'application/json;charset=utf-8'
+                    : 'text/plain;charset=utf-8';
+            const blob = new Blob([doc.content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = doc.fileName;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(url);
         }
 
         function closeDoc() {

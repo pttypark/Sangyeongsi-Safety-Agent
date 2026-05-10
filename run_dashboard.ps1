@@ -1,5 +1,5 @@
 param(
-    [string]$InputPath = "video\260510 1.mp4",
+    [string]$InputPath = "video\this.mp4",
     [string]$Ip = "127.0.0.1",
     [int]$Port = 5000
 )

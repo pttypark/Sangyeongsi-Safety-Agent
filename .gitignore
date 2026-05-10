@@ -1,2 +1,10 @@
 
+__pycache__/
+*.py[cod]
+*.log
+
+vendor/
+
 video/important_2_tb.MP4
+video/this.mp4
+zone/zone_this.mp4.txt

@@ -59,6 +59,7 @@ stream_jpeg_quality = 80
 preprocessed_video_names = {
     "important_tb_detected_cam1_step5.mp4",
     "260510 1.mp4",
+    "this.mp4",
 }
 
 def should_stream_without_analysis(source_path):
@@ -555,15 +556,18 @@ def read_realtime_video_frame(cap, playback_state):
     fps = playback_state["fps"]
     total_frames = playback_state["total_frames"]
 
+    if playback_state.get("ended"):
+        time.sleep(0.1)
+        return playback_state.get("last_frame_image")
+
     while True:
         elapsed = time.time() - playback_state["started_at"]
         target_frame = int(elapsed * fps)
 
         if total_frames > 0 and target_frame >= total_frames:
-            cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
-            playback_state["started_at"] = time.time()
-            playback_state["last_frame"] = -1
-            target_frame = 0
+            target_frame = total_frames - 1
+            playback_state["ended"] = True
+            break
 
         if target_frame > playback_state["last_frame"]:
             break
@@ -578,12 +582,11 @@ def read_realtime_video_frame(cap, playback_state):
     success, frame = cap.read()
     if success:
         playback_state["last_frame"] = target_frame
+        playback_state["last_frame_image"] = frame
         return frame
 
-    cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
-    playback_state["started_at"] = time.time()
-    playback_state["last_frame"] = -1
-    return None
+    playback_state["ended"] = True
+    return playback_state.get("last_frame_image")
 
 def encode_stream_frame(frame):
     display = cv2.resize(frame, (img_rw, img_rh))
@@ -621,17 +624,27 @@ def generate_frames(mode="ppe"):
             "fps": fps,
             "total_frames": total_frames,
             "started_at": time.time(),
-            "last_frame": -1
+            "last_frame": -1,
+            "last_frame_image": None,
+            "last_stream_frame": None,
+            "ended": False
         }
     
     frame_count = 0
     while True:
         if input_type == "video":
+            if playback_state.get("ended") and playback_state.get("last_stream_frame"):
+                time.sleep(0.1)
+                yield playback_state["last_stream_frame"]
+                continue
+
             frame = read_realtime_video_frame(cap, playback_state)
             if frame is None:
                 continue
             
             elapsed = time.time() - playback_state["started_at"]
+            if total_frames > 0:
+                elapsed = min(elapsed, max(0, (total_frames - 1) / fps))
             
             # Determine phase based on timeline
             phase = 1
@@ -643,7 +656,7 @@ def generate_frames(mode="ppe"):
                 phase = 3
             elif 22 <= elapsed < 29:
                 phase = 4
-            elif 29 <= elapsed <= 35: # Allow some buffer
+            elif 29 <= elapsed: # Keep the final state after the video ends.
                 phase = 5
                 
             socketio.emit('timeline_state', {"elapsed": elapsed, "phase": phase})
@@ -659,6 +672,8 @@ def generate_frames(mode="ppe"):
         stream_frame = encode_stream_frame(processed_frame)
         if stream_frame is None:
             continue
+        if playback_state is not None:
+            playback_state["last_stream_frame"] = stream_frame
 
         frame_count += 1
         if frame_count % 5 == 0:
@@ -690,12 +705,20 @@ def generate_raw_frames():
             "fps": fps,
             "total_frames": total_frames,
             "started_at": time.time(),
-            "last_frame": -1
+            "last_frame": -1,
+            "last_frame_image": None,
+            "last_stream_frame": None,
+            "ended": False
         }
     
     frame_count = 0
     while True:
         if input_type == "video":
+            if playback_state.get("ended") and playback_state.get("last_stream_frame"):
+                eventlet.sleep(0.1)
+                yield playback_state["last_stream_frame"]
+                continue
+
             frame = read_realtime_video_frame(cap, playback_state)
             if frame is None:
                 continue
@@ -707,6 +730,8 @@ def generate_raw_frames():
         stream_frame = encode_stream_frame(frame)
         if stream_frame is None:
             continue
+        if playback_state is not None:
+            playback_state["last_stream_frame"] = stream_frame
 
         frame_count += 1
         if frame_count % 5 == 0:
