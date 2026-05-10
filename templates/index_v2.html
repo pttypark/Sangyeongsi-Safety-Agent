@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>산업물류창고 안전관리 관제 시스템</title>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #0B1F5E; /* Navy Blue */
+            --secondary-color: #1e293b; /* Slate */
+            --accent-color: #3b82f6; /* Blue */
+            --bg-color: #f8fafc; /* Light Gray/White */
+            --card-bg: #ffffff;
+            --text-color: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --line-color: #cbd5e1;
+            
+            --safe-color: #10b981; /* Green */
+            --warning-color: #f59e0b; /* Orange */
+            --critical-color: #ef4444; /* Red */
+            --info-color: #0ea5e9; /* Light Blue */
+            --action-color: #8b5cf6; /* Purple */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.5;
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        .header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .header .system-status {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--safe-color);
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+        }
+
+        /* Main Layout */
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+            padding: 1.5rem;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        /* Card Style */
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.25rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        .card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+
+        .card-title-left {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Top Section: Video + Crop */
+        .top-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .video-panel {
+            position: relative;
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            height: 0;
+            padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+            background-color: #000;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        /* Simulated Video Movement (Pan & Zoom) */
+        .video-container img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            animation: cameraPan 20s ease-in-out infinite alternate;
+        }
+
+        @keyframes cameraPan {
+            0% { transform: scale(1) translate(0, 0); }
+            50% { transform: scale(1.05) translate(-10px, -5px); }
+            100% { transform: scale(1.02) translate(5px, 5px); }
+        }
+
+        /* Simulated Scanlines/Noise for Video Feel */
+        .video-container::after {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), rgba(255, 255, 255, 0.05);
+            background-size: 100% 4px, 100% 100%;
+            pointer-events: none;
+            opacity: 0.3;
+        }
+
+        /* Simulated Overlays */
+        .overlay-alert {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            background-color: rgba(239, 68, 68, 0.9);
+            color: white;
+            padding: 0.4rem 0.8rem;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            animation: pulse 2s infinite;
+            z-index: 10;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.9; }
+            50% { opacity: 0.6; }
+            100% { opacity: 0.9; }
+        }
+
+        /* Crop Zone Analysis (2x2) */
+        .crop-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .crop-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+        }
+
+        .crop-card.safe { border-left: 3px solid var(--safe-color); }
+        .crop-card.warning { border-left: 3px solid var(--warning-color); }
+        .crop-card.critical { border-left: 3px solid var(--critical-color); }
+
+        /* Flashing effect for dangerous zones */
+        .crop-card.flashing {
+            animation: flashBorder 1s infinite;
+            border-width: 2px;
+        }
+
+        @keyframes flashBorder {
+            0% { border-color: var(--border-color); box-shadow: none; }
+            50% { border-color: var(--critical-color); box-shadow: 0 0 10px rgba(239, 68, 68, 0.5); }
+            100% { border-color: var(--border-color); box-shadow: none; }
+        }
+
+        .crop-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+        }
+
+        .status-badge {
+            padding: 0.15rem 0.4rem;
+            border-radius: 3px;
+            font-size: 0.7rem;
+            color: white;
+            font-weight: 700;
+        }
+        .status-badge.safe { background-color: var(--safe-color); }
+        .status-badge.warning { background-color: var(--warning-color); }
+        .status-badge.critical { background-color: var(--critical-color); }
+
+        .crop-img {
+            width: 100%;
+            height: 70px;
+            background-color: #ddd;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            background-size: 200% 200%;
+        }
+
+        .crop-summary {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 20px; /* Keep height stable */
+        }
+
+        /* Conditional Buttons: Only show when flashing (alerting) */
+        .crop-action-btn {
+            display: none; /* Hidden by default */
+            background: none;
+            border: 1px solid var(--accent-color);
+            color: var(--accent-color);
+            padding: 0.1rem 0.3rem;
+            border-radius: 3px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .crop-card.flashing .crop-action-btn {
+            display: inline-block; /* Show only when flashing */
+        }
+
+        .crop-action-btn:hover {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        /* Middle Section: Alert Feed */
+        .alert-feed {
+            max-height: 200px;
+            overflow-y: auto;
+            background-color: #1e293b;
+            color: #e2e8f0;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        .alert-item {
+            display: grid;
+            grid-template-columns: 100px 100px 1fr 200px;
+            gap: 1rem;
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid #334155;
+            font-size: 0.85rem;
+            align-items: center;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .alert-item:last-child {
+            border-bottom: none;
+        }
+
+        .alert-time {
+            color: #94a3b8;
+        }
+
+        .alert-level {
+            font-weight: 700;
+            text-align: center;
+            border-radius: 3px;
+            padding: 0.1rem 0.3rem;
+            font-size: 0.75rem;
+        }
+        .alert-level.info { background-color: #0ea5e9; color: white; }
+        .alert-level.warning { background-color: #f59e0b; color: white; }
+        .alert-level.critical { background-color: #ef4444; color: white; }
+        .alert-level.action { background-color: #8b5cf6; color: white; }
+
+        .alert-msg {
+            font-weight: 500;
+        }
+
+        .alert-law {
+            color: #94a3b8;
+            font-size: 0.8rem;
+            text-align: right;
+        }
+
+        /* Lower Section: Grid */
+        .lower-grid {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 1.5rem;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            text-align: left;
+        }
+
+        th, td {
+            padding: 0.6rem 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background-color: #f1f5f9;
+            color: var(--primary-color);
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+
+        /* Action Recommendation */
+        .action-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .action-item {
+            background-color: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .action-content {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .action-title {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--primary-color);
+        }
+
+        .action-desc {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .action-priority {
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 3px;
+            color: white;
+        }
+        .action-priority.high { background-color: var(--critical-color); }
+        .action-priority.medium { background-color: var(--warning-color); }
+
+        /* Output Cards */
+        .output-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+
+        .doc-card {
+            background-color: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .doc-card:hover {
+            background-color: #f1f5f9;
+            transform: translateY(-2px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .doc-icon {
+            font-size: 1.2rem;
+            color: var(--accent-color);
+        }
+
+        .doc-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.1rem;
+        }
+
+        .doc-name {
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: var(--primary-color);
+        }
+
+        .doc-type {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        /* Utils */
+        .live-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.75rem;
+            color: var(--critical-color);
+            font-weight: 700;
+        }
+        .live-dot {
+            width: 6px;
+            height: 6px;
+            background-color: var(--critical-color);
+            border-radius: 50%;
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        /* Popup Styles */
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .popup-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            border: 4px solid var(--critical-color);
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .popup-content.doc-viewer {
+            max-width: 800px;
+            border-color: var(--primary-color);
+            text-align: left;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .popup-icon {
+            font-size: 3rem;
+            color: var(--critical-color);
+            margin-bottom: 0.5rem;
+            animation: pulseIcon 1s infinite;
+        }
+
+        @keyframes pulseIcon {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .popup-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .popup-desc {
+            color: var(--text-color);
+            margin-bottom: 1.5rem;
+            font-size: 1rem;
+        }
+
+        .popup-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.6rem 1.5rem;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .popup-btn:hover {
+            background-color: #1e293b;
+        }
+
+        /* Doc Viewer Specific */
+        .doc-body {
+            background-color: #f8fafc;
+            border: 1px solid var(--border-color);
+            padding: 1rem;
+            border-radius: 6px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.85rem;
+            white-space: pre-wrap;
+            margin-bottom: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <h1><i class="fas fa-shield-alt"></i> 산업안전 통합관제 시스템 <span style="font-size: 0.9rem; font-weight: normal; color: #94a3b8;">| Crop-based Safety Copilot Agent</span></h1>
+        <div class="system-status">
+            <div class="live-indicator">
+                <span class="live-dot"></span>
+                <span>LIVE STREAM</span>
+            </div>
+            <div class="status-indicator">
+                <span class="status-dot"></span>
+                <span>AI Agent Active</span>
+            </div>
+            <div><i class="far fa-clock"></i> <span id="current-time">2026-05-09 14:00:00</span></div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="dashboard-container">
+        
+        <!-- Top Section -->
+        <div class="top-grid">
+            <!-- Video Panel -->
+            <div class="card video-panel">
+                <div class="card-title">
+                    <div class="card-title-left"><i class="fas fa-video"></i> 실시간 영상 및 객체 분석</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">Cam 01 - Warehouse Central</div>
+                </div>
+                <div class="video-container">
+                    <img src="{{ url_for('video_feed') }}" alt="Warehouse Live Feed">
+                    <div class="overlay-alert" id="live-overlay"><i class="fas fa-exclamation-triangle"></i> Monitoring Active</div>
+                </div>
+            </div>
+
+            <!-- Crop Zone Analysis -->
+            <div class="card">
+                <div class="card-title">
+                    <div class="card-title-left"><i class="fas fa-th-large"></i> 2×2 Crop Zone Analysis</div>
+                </div>
+                <div class="crop-grid">
+                    <!-- Crop 01 -->
+                    <div class="crop-card safe" id="crop01">
+                        <div class="crop-header">
+                            <span>Crop 01</span>
+                            <span class="status-badge safe" id="crop01-badge">SAFE</span>
+                        </div>
+                        <div class="crop-img-container" style="height: 150px; overflow: hidden; position: relative;">
+                            <img src="{{ url_for('video_feed') }}" style="width: 200%; height: 200%; object-fit: cover; position: absolute; top: 0; left: 0;">
+                        </div>
+                        <div class="crop-summary">
+                            <span id="crop01-summary">PPE compliance detected</span>
+                            <button class="crop-action-btn" onclick="openDoc('sop', 'crop01')">SOP</button>
+                        </div>
+                    </div>
+                    <!-- Crop 02 -->
+                    <div class="crop-card warning" id="crop02">
+                        <div class="crop-header">
+                            <span>Crop 02</span>
+                            <span class="status-badge warning" id="crop02-badge">WARNING</span>
+                        </div>
+                        <div class="crop-img-container" style="height: 150px; overflow: hidden; position: relative;">
+                            <img src="{{ url_for('video_feed') }}" style="width: 200%; height: 200%; object-fit: cover; position: absolute; top: 0; left: -100%;">
+                        </div>
+                        <div class="crop-summary">
+                            <span id="crop02-summary">UA-13 overload detected</span>
+                            <button class="crop-action-btn" onclick="openDoc('report', 'crop02')">Report</button>
+                        </div>
+                    </div>
+                    <!-- Crop 03 -->
+                    <div class="crop-card critical" id="crop03">
+                        <div class="crop-header">
+                            <span>Crop 03</span>
+                            <span class="status-badge critical" id="crop03-badge">CRITICAL</span>
+                        </div>
+                        <div class="crop-img-container" style="height: 150px; overflow: hidden; position: relative;">
+                            <img src="{{ url_for('video_feed') }}" style="width: 200%; height: 200%; object-fit: cover; position: absolute; top: -100%; left: 0;">
+                        </div>
+                        <div class="crop-summary">
+                            <span id="crop03-summary">Worker inside forklift trajectory</span>
+                            <button class="crop-action-btn" onclick="openDoc('risk', 'crop03')">Risk</button>
+                        </div>
+                    </div>
+                    <!-- Crop 04 -->
+                    <div class="crop-card warning" id="crop04">
+                        <div class="crop-header">
+                            <span>Crop 04</span>
+                            <span class="status-badge warning" id="crop04-badge">WARNING</span>
+                        </div>
+                        <div class="crop-img-container" style="height: 150px; overflow: hidden; position: relative;">
+                            <img src="{{ url_for('video_feed') }}" style="width: 200%; height: 200%; object-fit: cover; position: absolute; top: -100%; left: -100%;">
+                        </div>
+                        <div class="crop-summary">
+                            <span id="crop04-summary">Dock-side worker proximity</span>
+                            <button class="crop-action-btn" onclick="openDoc('json', 'crop04')">JSON</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Middle Section: AI Agent 위험 판단 결과 -->
+        <div class="card">
+            <div class="card-title">
+                <div class="card-title-left"><i class="fas fa-stream"></i> AI Agent 위험 판단 결과 (실시간 Alert Feed)</div>
+                <div style="font-size: 0.75rem; color: var(--safe-color);"><i class="fas fa-circle"></i> Monitoring active</div>
+            </div>
+            <div class="alert-feed" id="alert-feed-container">
+                <!-- Logs will be appended here dynamically -->
+            </div>
+        </div>
+
+        <!-- Lower Section -->
+        <div class="lower-grid">
+            <!-- Left: 위험 판단 근거 -->
+            <div class="card">
+                <div class="card-title">
+                    <div class="card-title-left"><i class="fas fa-search"></i> 위험 판단 근거 (Explainable AI)</div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>위험 유형</th>
+                            <th>판단 근거</th>
+                            <th>관련 법규/기준</th>
+                            <th>판정</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr id="row-forklift_collision">
+                            <td style="font-weight: 600; color: var(--critical-color);">forklift_collision</td>
+                            <td>작업자가 지게차 이동 경로 내부에 위치</td>
+                            <td>산업안전보건기준 규칙 제167조</td>
+                        </tr>
+                        <tr id="row-overload_risk">
+                            <td style="font-weight: 600; color: var(--warning-color);">overload_risk</td>
+                            <td>적재물 높이가 시야 기준 초과</td>
+                            <td>내부 SOP v2.1</td>
+                        </tr>
+                        <tr id="row-dock_proximity">
+                            <td style="font-weight: 600; color: var(--warning-color);">dock_proximity</td>
+                            <td>도크 인근 작업자 접근 감지</td>
+                            <td>KOSHA G-102</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Right: 관리자 대응 조치 -->
+            <div class="card">
+                <div class="card-title">
+                    <div class="card-title-left"><i class="fas fa-clipboard-list"></i> 관리자 대응 조치 (Action Recommendation)</div>
+                </div>
+                <div class="action-list">
+                    <div class="action-item">
+                        <div class="action-content">
+                            <span class="action-title">작업구역 분리 강화</span>
+                            <span class="action-desc">지게차 동선과 보행자 통로의 물리적 분리 조치</span>
+                        </div>
+                        <span class="action-priority high">High</span>
+                    </div>
+                    <div class="action-item">
+                        <div class="action-content">
+                            <span class="action-title">적재 높이 제한</span>
+                            <span class="action-desc">시야 확보를 위한 적재 기준 준수 여부 확인</span>
+                        </div>
+                        <span class="action-priority medium">Medium</span>
+                    </div>
+                    <div class="action-item">
+                        <div class="action-content">
+                            <span class="action-title">도크 접근 통제</span>
+                            <span class="action-desc">추락 및 충돌 위험 구역 진입 차단</span>
+                        </div>
+                        <span class="action-priority medium">Medium</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer: 산출물 -->
+        <div class="card">
+            <div class="card-title">
+                <div class="card-title-left"><i class="fas fa-file-download"></i> 산출물 (Output Documents)</div>
+            </div>
+            <div class="output-grid">
+                <div class="doc-card" onclick="openDoc('sop')">
+                    <div class="doc-icon"><i class="fas fa-file-pdf"></i></div>
+                    <div class="doc-info">
+                        <span class="doc-name">SOP.pdf</span>
+                        <span class="doc-type">Forklift safety procedure</span>
+                        <span class="doc-badge" style="background: #94a3b8; color: white; font-size: 0.7rem; padding: 2px 4px; border-radius: 3px; width: fit-content; margin-top: 2px;">Pending</span>
+                    </div>
+                </div>
+                <div class="doc-card" onclick="openDoc('report')">
+                    <div class="doc-icon"><i class="fas fa-file-alt"></i></div>
+                    <div class="doc-info">
+                        <span class="doc-name">Safety_Report.pdf</span>
+                        <span class="doc-type">안전 보고서</span>
+                        <span class="doc-badge" style="background: #94a3b8; color: white; font-size: 0.7rem; padding: 2px 4px; border-radius: 3px; width: fit-content; margin-top: 2px;">Pending</span>
+                    </div>
+                </div>
+                <div class="doc-card" onclick="openDoc('risk')">
+                    <div class="doc-icon"><i class="fas fa-file-excel"></i></div>
+                    <div class="doc-info">
+                        <span class="doc-name">Risk_Assessment.xlsx</span>
+                        <span class="doc-type">위험성 평가표</span>
+                        <span class="doc-badge" style="background: #94a3b8; color: white; font-size: 0.7rem; padding: 2px 4px; border-radius: 3px; width: fit-content; margin-top: 2px;">Pending</span>
+                    </div>
+                </div>
+                <div class="doc-card" onclick="openDoc('json')">
+                    <div class="doc-icon"><i class="fas fa-code"></i></div>
+                    <div class="doc-info">
+                        <span class="doc-name">Event.json</span>
+                        <span class="doc-type">Event metadata</span>
+                        <span class="doc-badge" style="background: #94a3b8; color: white; font-size: 0.7rem; padding: 2px 4px; border-radius: 3px; width: fit-content; margin-top: 2px;">Pending</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Critical Popup Overlay -->
+    <div class="popup-overlay" id="critical-popup">
+        <div class="popup-content">
+            <div class="popup-icon"><i class="fas fa-exclamation-circle"></i></div>
+            <div class="popup-title" style="color: var(--critical-color);">치명적 위험 감지!</div>
+            <div class="popup-desc" id="popup-message">작업자가 지게차 이동 경로 내부에 진입했습니다! (Crop 03)</div>
+            <button class="popup-btn" onclick="closePopup()">상황 확인</button>
+        </div>
+    </div>
+
+    <!-- Document Viewer Popup -->
+    <div class="popup-overlay" id="doc-popup">
+        <div class="popup-content doc-viewer">
+            <div class="popup-title" id="doc-title">Document Preview</div>
+            <div class="doc-body" id="doc-body" style="white-space: pre-wrap; font-family: monospace; text-align: left; background: #f8fafc; color: #334155; padding: 15px; border-radius: 4px; border: 1px solid #e2e8f0; margin-bottom: 15px; max-height: 400px; overflow-y: auto;">Loading...</div>
+            <button class="popup-btn" onclick="closeDoc()">닫기</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script>
+        // Update current time
+        function updateTime() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            
+            document.getElementById('current-time').textContent = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+            return `${hours}:${minutes}:${seconds}`;
+        }
+        
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        const container = document.getElementById('alert-feed-container');
+        
+        function updateCropUI(cropId, status, summary) {
+            const card = document.getElementById(cropId);
+            const badge = document.getElementById(`${cropId}-badge`);
+            const summaryEl = document.getElementById(`${cropId}-summary`);
+            
+            if (!card) return;
+
+            // Update classes
+            card.className = `crop-card ${status.toLowerCase()}`;
+            badge.className = `status-badge ${status.toLowerCase()}`;
+            badge.textContent = status;
+            summaryEl.textContent = summary;
+
+            // Handle flashing
+            if (status === 'WARNING' || status === 'CRITICAL') {
+                card.classList.add('flashing');
+            } else {
+                card.classList.remove('flashing');
+            }
+        }
+
+        // Connect to SocketIO
+        const socket = io();
+        let sentAlerts = new Set();
+        let currentPhase = 0;
+
+        socket.on('timeline_state', function(data) {
+            const elapsed = data.elapsed;
+            const phase = data.phase;
+            
+            // Update live overlay
+            const overlay = document.getElementById('live-overlay');
+            overlay.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Monitoring Active (${elapsed.toFixed(1)}s)`;
+            
+            // Handle phase transitions
+            if (phase !== currentPhase) {
+                currentPhase = phase;
+                updatePhaseUI(phase);
+            }
+            
+            // Handle specific alerts based on time
+            checkAndSendAlerts(elapsed);
+        });
+
+        function updatePhaseUI(phase) {
+            const tbody = document.querySelector('table tbody');
+            const actionList = document.querySelector('.action-list');
+            
+            if (phase === 1) {
+                updateCropUI('crop01', 'SAFE', 'PPE compliance detected');
+                updateCropUI('crop02', 'SAFE', 'Normal operation');
+                updateCropUI('crop03', 'SAFE', 'Normal operation');
+                updateCropUI('crop04', 'SAFE', 'Normal operation');
+                
+                tbody.innerHTML = `
+                    <tr>
+                        <td style="font-weight: 600; color: var(--safe-color);">normal_operation</td>
+                        <td>지게차 작업 구역 진입. 정상 모니터링 중.</td>
+                        <td>내부 SOP v2.1</td>
+                        <td>SAFE</td>
+                    </tr>
+                `;
+                
+                actionList.innerHTML = `
+                    <div class="action-item">
+                        <div class="action-content">
+                            <span class="action-title">모니터링 유지</span>
+                            <span class="action-desc">작업 구역 진입 상태 확인</span>
+                        </div>
+                        <span class="action-priority low">Low</span>
+                    </div>
+                `;
+                
+                // Reset docs
+                document.querySelectorAll('.doc-card').forEach(card => {
+                    card.classList.remove('generated');
+                    card.style.borderColor = '';
+                    card.style.backgroundColor = '';
+                    const badge = card.querySelector('.doc-badge');
+                    if (badge) {
+                        badge.textContent = 'Pending';
+                        badge.style.background = '#94a3b8';
+                    }
+                });
+                
+                sentAlerts.clear();
+                container.innerHTML = ''; // Clear feed on loop
+                
+                const banner = document.getElementById('top-alert-banner');
+                if (banner) banner.style.display = 'none';
+            } else if (phase === 2) {
+                updateCropUI('crop02', 'WARNING', 'UA-13 overload detected');
+                
+                tbody.innerHTML = `
+                    <tr style="background: rgba(245, 158, 11, 0.1);">
+                        <td style="font-weight: 600; color: var(--warning-color);">overload_visibility_risk</td>
+                        <td>적재 높이가 운전자 전방 시야를 제한할 가능성이 있음</td>
+                        <td>Forklift Operation SOP v2.1</td>
+                        <td>WARNING</td>
+                    </tr>
+                `;
+                
+                actionList.innerHTML = `
+                    <div class="action-item">
+                        <div class="action-content">
+                            <span class="action-title">적재 높이 제한</span>
+                            <span class="action-desc">운전자 시야 확보 확인 및 필요 시 유도자 배치</span>
+                        </div>
+                        <span class="action-priority medium">Medium</span>
+                    </div>
+                `;
+            } else if (phase === 3) {
+                updateCropUI('crop03', 'WARNING', 'Worker near forklift route');
+                updateCropUI('crop04', 'WARNING', 'Dock-side worker proximity');
+                
+                tbody.innerHTML = `
+                    <tr style="background: rgba(245, 158, 11, 0.1);">
+                        <td style="font-weight: 600; color: var(--warning-color);">worker_forklift_proximity</td>
+                        <td>작업자가 지게차 예상 이동 경로 인근에 위치</td>
+                        <td>산업안전보건기준 규칙 제167조</td>
+                        <td>WARNING</td>
+                    </tr>
+                `;
+                
+                actionList.innerHTML = `
+                    <div class="action-item">
+                        <div class="action-content">
+                            <span class="action-title">작업자 이동 경로 안내</span>
+                            <span class="action-desc">지게차 감속 유도 및 통행로 접근 주의</span>
+                        </div>
+                        <span class="action-priority medium">Medium</span>
+                    </div>
+                `;
+            } else if (phase === 4) {
+                updateCropUI('crop03', 'CRITICAL', 'Worker inside forklift trajectory');
+                
+                tbody.innerHTML = `
+                    <tr style="background: rgba(239, 68, 68, 0.1);">
+                        <td style="font-weight: 600; color: var(--critical-color);">forklift_pedestrian_collision</td>
+                        <td>작업자가 지게차 이동 경로 내부에 위치하고 collision zone overlap 발생</td>
+                        <td>산업안전보건기준 규칙 제167조 / KOSHA G-102</td>
+                        <td>CRITICAL</td>
+                    </tr>
+                `;
+                
+                actionList.innerHTML = `
+                    <div class="action-item">
+                        <div class="action-content">
+                            <span class="action-title">지게차 즉시 정지</span>
+                            <span class="action-desc">작업자 안전구역 이동 및 해당 구역 접근 통제</span>
+                        </div>
+                        <span class="action-priority high">High</span>
+                    </div>
+                `;
+                
+                showTopBanner('치명적 위험 감지! 작업자가 지게차 이동 경로 내부에 진입했습니다.');
+            } else if (phase === 5) {
+                updateCropUI('crop03', 'CRITICAL', 'Collision overlap detected');
+                
+                actionList.innerHTML = `
+                    <div class="action-item">
+                        <div class="action-content">
+                            <span class="action-title">산출물 생성 완료</span>
+                            <span class="action-desc">SOP, Report, JSON 기록 완료. 후속 대책 수립 필요.</span>
+                        </div>
+                        <span class="action-priority low">Low</span>
+                    </div>
+                `;
+                
+                // Generate documents
+                document.querySelectorAll('.doc-card').forEach(card => {
+                    card.classList.add('generated');
+                    card.style.borderColor = 'var(--accent-color)';
+                    card.style.backgroundColor = 'rgba(37, 99, 235, 0.05)';
+                    const badge = card.querySelector('.doc-badge');
+                    if (badge) {
+                        badge.textContent = 'Generated';
+                        badge.style.background = 'var(--safe-color)';
+                    }
+                });
+            }
+        }
+
+        function checkAndSendAlerts(elapsed) {
+            if (elapsed >= 5 && !sentAlerts.has(1)) {
+                appendFeed('INFO', '지게차 작업 구역 진입 감지', '전체', '내부 SOP v2.1');
+                sentAlerts.add(1);
+            }
+            if (elapsed >= 10 && !sentAlerts.has(2)) {
+                appendFeed('WARNING', 'Crop 02에서 적재물 과적 및 시야 제한 가능성 감지', 'Crop 02', 'Forklift SOP v2.1');
+                sentAlerts.add(2);
+            }
+            if (elapsed >= 18 && !sentAlerts.has(3)) {
+                appendFeed('WARNING', '작업자와 지게차 이동 경로 근접 감지', 'Crop 03', '산업안전보건기준 규칙 제167조');
+                sentAlerts.add(3);
+            }
+            if (elapsed >= 25 && !sentAlerts.has(4)) {
+                appendFeed('CRITICAL', 'Crop 03에서 작업자-지게차 동선 중첩 감지', 'Crop 03', 'KOSHA G-102');
+                sentAlerts.add(4);
+            }
+            if (elapsed >= 30 && !sentAlerts.has(5)) {
+                appendFeed('ACTION', '안전관리자 알림 전송 및 SOP 생성 완료', '전체', '내부 SOP v2.1');
+                sentAlerts.add(5);
+            }
+            if (elapsed >= 32 && !sentAlerts.has(6)) {
+                appendFeed('LOGGED', 'Event JSON 및 위험성 평가표 기록 완료', '전체', '-');
+                sentAlerts.add(6);
+            }
+        }
+
+        function appendFeed(level, msg, crop, law = '-') {
+            const timeStr = updateTime();
+            const div = document.createElement('div');
+            div.className = 'alert-item';
+            if (level === 'CRITICAL') div.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+            div.innerHTML = `
+                <span class="alert-time">${timeStr}</span>
+                <span class="alert-level ${level.toLowerCase()}">[${level.toUpperCase()}]</span>
+                <span class="alert-crop">${crop}</span>
+                <span class="alert-msg">${msg}</span>
+                <span class="alert-law">${law}</span>
+            `;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight; // Auto scroll
+            
+            // Smooth entrance animation
+            div.style.opacity = 0;
+            div.style.transform = 'translateY(10px)';
+            div.style.transition = 'all 0.3s ease';
+            setTimeout(() => {
+                div.style.opacity = 1;
+                div.style.transform = 'translateY(0)';
+            }, 10);
+        }
+
+        function showTopBanner(msg) {
+            let banner = document.getElementById('top-alert-banner');
+            if (!banner) {
+                banner = document.createElement('div');
+                banner.id = 'top-alert-banner';
+                banner.style.position = 'fixed';
+                banner.style.top = '0';
+                banner.style.left = '0';
+                banner.style.width = '100%';
+                banner.style.background = 'var(--critical-color)';
+                banner.style.color = 'white';
+                banner.style.padding = '10px';
+                banner.style.textAlign = 'center';
+                banner.style.fontWeight = 'bold';
+                banner.style.zIndex = '1000';
+                document.body.appendChild(banner);
+            }
+            banner.textContent = msg;
+            banner.style.display = 'block';
+        }
+
+        function hideTopBanner() {
+            const banner = document.getElementById('top-alert-banner');
+            if (banner) banner.style.display = 'none';
+        }
+
+        const docs = {
+            sop: {
+                title: `Forklift Operation SOP v2.1`,
+                content: `SECTION 1. 작업 전 점검\n* 지게차 경고등, 후진 경보음, 브레이크 상태 확인\n* 적재물 고정 상태 및 시야 확보 여부 확인\n* 작업 구역 내 보행자 동선 확인\n\nSECTION 2. 운행 기준\n* 작업자 접근 구역에서는 즉시 감속\n* 적재물이 시야를 가릴 경우 유도자 배치\n* 보행자와 지게차 동선이 교차할 경우 지게차 우선 정지\n\nSECTION 3. 위험 상황 대응\n* Collision zone overlap 발생 시 즉시 정지\n* 작업자를 안전구역으로 이동시킨 후 운행 재개\n* 반복 발생 시 관리자에게 보고하고 작업 동선을 재설정`
+            },
+            report: {
+                title: `Safety Event Report`,
+                content: `Event Summary:\n* Event ID: EVT-20260509-142731\n* Camera: CAM-01\n* Crop Zone: Crop 03\n* Event Type: forklift_pedestrian_collision\n* Severity: CRITICAL\n* Time: 14:27:31\n\nDetected Evidence:\n* Object Pair: forklift / person\n* Condition: worker inside forklift movement path\n* Context: overload visibility risk previously detected in Crop 02\n\nMatched Regulations:\n* 산업안전보건기준에 관한 규칙 제167조\n* KOSHA Guide G-102\n* Forklift Operation SOP v2.1\n\nRecommended Action:\n* 지게차 즉시 정지\n* 작업자 안전구역 이동\n* 작업구역 임시 통제\n* 관리자 현장 확인\n\nMonitoring Note:\n조치 후 동일 구역 재진입 여부를 5분간 모니터링한다.`
+            },
+            risk: {
+                title: `Risk Assessment`,
+                content: `작업명 / 위험요인 / 가능성(A) / 중대성(B) / 위험도(A×B) / 판정 / 개선조치\n\n1.\n작업명: 지게차 운행\n위험요인: 지게차-보행자 동선 중첩\n가능성: 4\n중대성: 5\n위험도: 20\n판정: High\n개선조치: 작업구역 분리 및 지게차 정지 기준 강화\n\n2.\n작업명: 적재 작업\n위험요인: 과적에 따른 시야 제한\n가능성: 3\n중대성: 4\n위험도: 12\n판정: Medium\n개선조치: 적재 높이 제한 및 유도자 배치\n\n3.\n작업명: 도크 작업\n위험요인: 도크 인근 작업자 접근\n가능성: 3\n중대성: 3\n위험도: 9\n판정: Medium\n개선조치: 도크 주변 접근 통제 및 경고 표지 강화`
+            },
+            json: {
+                title: `Event.json`,
+                content: `{\n  "event_id": "EVT-20260509-142731",\n  "timestamp": "2026-05-09T14:27:31",\n  "camera_id": "CAM_01",\n  "crop_zone": "Crop_03",\n  "risk_level": "CRITICAL",\n  "event_type": "forklift_pedestrian_collision",\n  "crop_evidence": {\n    "objects": ["forklift", "person"],\n    "reason": "worker_inside_forklift_trajectory",\n    "zone_overlap": true\n  },\n  "semantic_evidence": {\n    "top_hazard": "forklift_pedestrian_collision",\n    "similarity": 0.92,\n    "matched_prompt": "Worker detected inside forklift movement trajectory"\n  },\n  "rule_evidence": {\n    "matched_rules": [\n      "산업안전보건기준에 관한 규칙 제167조",\n      "KOSHA Guide G-102",\n      "Forklift Operation SOP v2.1"\n    ],\n    "violation_status": "possible_violation"\n  },\n  "recommended_actions": [\n    "지게차 즉시 정지",\n    "작업자 안전구역 이동",\n    "작업구역 임시 통제",\n    "관리자 현장 확인"\n  ]\n}`
+            }
+        };
+
+        function openDoc(type) {
+            const doc = docs[type];
+            if (doc) {
+                document.getElementById('doc-title').textContent = doc.title;
+                document.getElementById('doc-body').textContent = doc.content;
+                document.getElementById('doc-popup').style.display = 'flex';
+            }
+        }
+
+        function closeDoc() {
+            document.getElementById('doc-popup').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
