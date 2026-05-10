@@ -1,0 +1,38 @@
+# Core dependencies
+numpy>=1.20.0
+opencv-python>=4.5.0
+torch>=1.10.0
+torchvision>=0.11.0
+ultralytics>=8.0.0
+
+# Web server
+Flask>=2.0.0
+Flask-SocketIO>=5.0.0
+eventlet>=0.30.0
+
+# Camera handling 
+pygrabber>=0.1.2; platform_system == "Windows"
+
+# Geometry processing
+shapely>=1.8.0
+
+# Image processing
+Pillow>=8.0.0
+
+# Utilities
+python-dateutil>=2.8.0
+requests>=2.25.0
+tqdm>=4.60.0
+pandas>=1.1.4
+seaborn>=0.11.0
+
+# Hardware acceleration (optional)
+# For NVIDIA GPUs (non-Jetson)
+# cudatoolkit>=11.3; platform_system == "Windows" or platform_system == "Linux"
+
+# For Jetson Nano (these are pre-installed with JetPack)
+# jetson-stats>=3.0; platform_machine == "aarch64"
+
+# [torch] [torchvision] [torchaudio] for Jetson Orin Nano
+# pip3 uninstall torch torchvision torchaudio -y
+# pip3 install torch torchvision torchaudio --index-url https://pypi.jetson-ai-lab.dev/jp6/cu126

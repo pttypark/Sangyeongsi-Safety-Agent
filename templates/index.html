@@ -1,0 +1,1333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Updated Socket.IO client library to a newer version -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.0/socket.io.js"></script>
+    <style>
+        /* Modern UI Styles */
+        :root {
+            --primary-color: #1d4ed8;
+            --secondary-color: #071b49;
+            --accent-color: #dc2626;
+            --warning-color: #f97316;
+            --safe-color: #16a34a;
+            --background-color: #eef3f8;
+            --panel-color: #ffffff;
+            --line-color: #d9e2ef;
+            --text-color: #172033;
+            --muted-color: #667085;
+            --card-shadow: 0 10px 28px rgba(15, 23, 42, 0.12);
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+        }
+        
+        .navbar {
+            background-color: #061640;
+            padding: 0.85rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 6px 18px rgba(2, 6, 23, 0.18);
+        }
+        
+        .logo {
+            color: white;
+            font-size: 1.25rem;
+            font-weight: bold;
+            letter-spacing: 0;
+        }
+        
+        nav {
+            display: flex;
+            gap: 1.5rem;
+        }
+        
+        .nav-item {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.5rem;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        
+        .nav-item:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
+        
+        .hero-section {
+            background: #0b2a63;
+            color: white;
+            padding: 2rem 2rem;
+            text-align: center;
+            border-bottom: 4px solid #60a5fa;
+        }
+        
+        .hero-content h1 {
+            font-size: 2.1rem;
+            margin: 0 0 0.65rem;
+            text-shadow: none;
+        }
+        
+        .hero-content p {
+            font-size: 1rem;
+            max-width: 800px;
+            margin: 0 auto;
+            color: #dce9ff;
+        }
+        
+        .content {
+            padding: 1.5rem;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+            max-width: 1280px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background-color: var(--panel-color);
+            border-radius: 8px;
+            padding: 1.25rem;
+            box-shadow: var(--card-shadow);
+            border: 1px solid var(--line-color);
+        }
+        
+        .card h2 {
+            color: var(--secondary-color);
+            margin-top: 0;
+            border-bottom: 2px solid #93c5fd;
+            padding-bottom: 0.75rem;
+            text-align: center;
+            font-size: 1.45rem;
+        }
+        
+        .video-feed {
+            width: 100%;
+            border-radius: 6px;
+            margin: 0;
+            background: #0f172a;
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.18);
+        }
+
+        .monitoring-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+            gap: 1rem;
+            align-items: stretch;
+            margin: 1rem 0;
+        }
+
+        .feed-panel {
+            min-width: 0;
+        }
+
+        .analysis-panel {
+            border: 1px solid #d7dde4;
+            border-radius: 8px;
+            background: #f8fafc;
+            padding: 1rem;
+            min-height: 240px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .analysis-panel h3 {
+            margin: 0 0 0.75rem;
+            color: var(--secondary-color);
+            font-size: 1rem;
+        }
+
+        .analysis-log-list {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            overflow-y: auto;
+        }
+
+        .analysis-empty {
+            color: #7c8794;
+            font-size: 0.95rem;
+            margin: 0;
+        }
+
+        .analysis-log-item {
+            border-left: 5px solid var(--accent-color);
+            background: white;
+            border-radius: 6px;
+            padding: 1rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+
+        .analysis-log-time {
+            display: none;
+        }
+
+        .analysis-log-message {
+            color: var(--text-color);
+            font-weight: 700;
+            line-height: 1.35;
+            overflow-wrap: anywhere;
+            font-size: 1rem;
+        }
+
+        .risk-dashboard {
+            display: grid;
+            grid-template-columns: minmax(260px, 0.9fr) minmax(420px, 1.4fr);
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .risk-panel {
+            border: 1px solid var(--line-color);
+            border-radius: 8px;
+            background: #ffffff;
+            overflow: hidden;
+            transition: box-shadow 0.25s ease, border-color 0.25s ease;
+        }
+
+        .risk-panel.updated {
+            border-color: #60a5fa;
+            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.18);
+        }
+
+        .risk-panel.full {
+            grid-column: 1 / -1;
+        }
+
+        .risk-panel-title {
+            background: #061b55;
+            color: #ffffff;
+            font-weight: 700;
+            padding: 0.65rem 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            justify-content: center;
+        }
+
+        .risk-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            font-size: 0.9rem;
+        }
+
+        .risk-table th,
+        .risk-table td {
+            border: 1px solid #e1e8f2;
+            padding: 0.6rem 0.5rem;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .risk-table th {
+            background: #f1f5fb;
+            color: #18315f;
+            font-weight: 700;
+        }
+
+        .risk-table td {
+            background: #ffffff;
+        }
+
+        .risk-table .left {
+            text-align: left;
+        }
+
+        .risk-value-danger,
+        .risk-judgement-danger {
+            color: var(--accent-color);
+            font-weight: 800;
+        }
+
+        .risk-level-high {
+            color: var(--accent-color);
+            font-weight: 800;
+        }
+
+        .risk-level-medium {
+            color: var(--warning-color);
+            font-weight: 800;
+        }
+
+        .risk-level-low {
+            color: var(--safe-color);
+            font-weight: 800;
+        }
+
+        .status-chip {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 48px;
+            padding: 0.2rem 0.5rem;
+            border-radius: 999px;
+            font-weight: 800;
+            font-size: 0.78rem;
+        }
+
+        .status-chip.danger {
+            color: #b91c1c;
+            background: #fee2e2;
+        }
+
+        .status-chip.safe {
+            color: #166534;
+            background: #dcfce7;
+        }
+
+        .status-chip.warning {
+            color: #c2410c;
+            background: #ffedd5;
+        }
+
+        @media (max-width: 980px) {
+            .risk-dashboard {
+                grid-template-columns: 1fr;
+            }
+
+            .risk-panel.full {
+                grid-column: auto;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .monitoring-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .video-controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .video-controls button {
+            padding: 0.5rem 1rem;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .video-controls button:hover {
+            background-color: #2980b9;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .action-buttons {
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+        }
+        
+        .action-buttons button {
+            padding: 0.75rem 1.5rem;
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.3s;
+        }
+        
+        .action-buttons button:hover {
+            background-color: #34495e;
+        }
+        
+        footer {
+            background-color: var(--secondary-color);
+            color: white;
+            text-align: center;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+        
+        /* Video Source Selection */
+        .video-source-selection {
+            display: none;
+        }
+        
+        .source-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .source-buttons button {
+            padding: 0.5rem 1rem;
+            border: 1px solid #ddd;
+            background-color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .source-buttons button.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        
+        .video-list {
+            display: none;
+            margin-top: 1rem;
+        }
+        
+        .video-list.active {
+            display: block;
+        }
+        
+        .video-item {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            background-color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .video-item:hover {
+            background-color: #e9ecef;
+        }
+        
+        .video-item.selected {
+            background-color: #e3f2fd;
+            border-left: 3px solid var(--primary-color);
+        }
+        
+        .video-item i {
+            margin-right: 0.5rem;
+            color: var(--primary-color);
+        }
+
+        /* Notification styles */
+        .notification {
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .notification.has-alert {
+            animation: bell-ring 1s infinite;
+            color: red;
+        }
+
+        .notification .badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background-color: red;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .notification-panel {
+            display: none;
+            position: absolute;
+            top: 60px;
+            right: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            padding: 16px;
+            width: 300px;
+            z-index: 1000;
+        }
+        
+        .notification-panel.active {
+            display: block;
+        }
+        
+        /* UNSAFE status styling */
+        .unsafe-status {
+            background-color: #ff0000;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            margin-bottom: 12px;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .unsafe-icon {
+            font-size: 24px;
+            margin-right: 10px;
+        }
+        
+        .unsafe-text {
+            font-size: 20px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        
+        .notification-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 5px;
+        }
+        
+        .notification-item.danger {
+            border-left: 4px solid red;
+            padding-left: 8px;
+            background-color: #fff8f8;
+        }
+        
+        @keyframes bell-ring {
+            0% { transform: rotate(0); }
+            10% { transform: rotate(10deg); }
+            20% { transform: rotate(-10deg); }
+            30% { transform: rotate(6deg); }
+            40% { transform: rotate(-6deg); }
+            50% { transform: rotate(0); }
+            100% { transform: rotate(0); }
+        }
+        
+        .screenshot-preview {
+            max-width: 100%;
+            margin-top: 10px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .camera-list {
+            display: none;
+            margin-top: 1rem;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .camera-list.active {
+            display: flex;
+        }
+
+        .source-dropdown {
+            flex-grow: 1;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+        }
+
+        .camera-list button {
+            padding: 8px 12px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+    </style>
+    <title>Sangyeongsi-Safety-Agent</title>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <header class="navbar">
+        <div class="logo"><i class="fas fa-shield-alt"></i> Sangyeongsi-Safety-Agent</div>
+        <nav>
+            <a href="{{ url_for('index') }}" class="nav-item"><i class="fas fa-shield-alt"></i> Safety Monitor</a>
+            <a href="{{ url_for('stats') }}" class="nav-item"><i class="fas fa-chart-bar"></i> Statistics</a>
+            <a href="{{ url_for('manage') }}" class="nav-item"><i class="fas fa-map-marked-alt"></i> Manage</a>
+            <div class="nav-item notification" title="Notifications" id="notificationBell"><i class="fas fa-bell"></i></div>
+        </nav>
+    </header>
+    
+    <!-- Notification Panel -->
+    <div class="notification-panel" id="notificationPanel">
+        <div id="unsafeStatus" class="unsafe-status" style="display: none;">
+            <div class="unsafe-icon"><i class="fas fa-triangle-exclamation"></i></div>
+            <div class="unsafe-text">UNSAFE</div>
+        </div>
+        <h3>Safety Alerts</h3>
+        <button id="clearAllNotifications" style="margin-top: 10px;"><i class="fas fa-trash-alt"></i> Clear All</button>
+        <div id="notificationList">
+            <!-- Notifications will be populated here -->
+        </div>
+    </div>
+
+    <!-- Add audio element for alert sound -->
+    <audio id="alertSound" src="{{ url_for('static', filename='alert.mp3') }}" preload="auto"></audio>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="hero-content">
+            <h1><i class="fas fa-shield-alt"></i> Sangyeongsi-Safety-Agent</h1>
+            <p>Real-time Safety-Agent System for intelligent site monitoring and risk response.</p>
+        </div>
+    </section>
+
+    <!-- Content Section -->
+    <main class="content">
+        <!-- PPE Detection Section -->
+        <section id="ppe-section" class="card">
+            <h2><i class="fas fa-shield-alt"></i> Safety Monitoring</h2>
+            
+            <!-- Video Source Selection -->
+            <div class="video-source-selection">
+                <h3>Select Video Source</h3>
+                <div class="source-buttons">
+                    <button id="cameraSource" class="active"><i class="fas fa-camera"></i> Camera</button>
+                    <button id="videoSource"><i class="fas fa-video"></i> Video File</button>
+                </div>
+                
+                <!-- Camera selection dropdown -->
+                <div id="cameraList" class="camera-list active">
+                    <select id="cameraSelect" class="source-dropdown">
+                        <option value="" disabled selected>Select a camera...</option>
+                        <!-- Camera options will be loaded here -->
+                    </select>
+                    <button id="refreshCamerasBtn"><i class="fas fa-sync-alt"></i> Refresh Cameras</button>
+                </div>
+                
+                <!-- Video file selection list -->
+                <div id="videoList" class="video-list">
+                    <!-- Video files will be listed here -->
+                    <p id="loadingVideos">Loading available videos...</p>
+                </div>
+            </div>
+            
+            <div class="video-controls">
+                <button onclick="startStream()"><i class="fas fa-play"></i> Start Stream</button>
+                <button onclick="stopStream()"><i class="fas fa-stop"></i> Stop Stream</button>
+            </div>
+            <div class="monitoring-layout">
+                <div class="feed-panel">
+                    <img id="videoFeed" src="" alt="Live safety monitoring feed" class="video-feed hidden">
+                </div>
+                <aside class="analysis-panel" aria-label="Timed analysis results">
+                    <h3><i class="fas fa-clipboard-list"></i> Analysis Results</h3>
+                    <div id="analysisLogList" class="analysis-log-list">
+                        <p id="analysisEmpty" class="analysis-empty">Start the stream to view analysis logs.</p>
+                    </div>
+                </aside>
+            </div>
+            <section class="risk-dashboard" aria-label="Safety risk assessment dashboard">
+                <div class="risk-panel">
+                    <div class="risk-panel-title"><i class="fas fa-cubes"></i> 검출 객체</div>
+                    <table class="risk-table">
+                        <thead>
+                            <tr>
+                                <th>Class</th>
+                                <th>ID</th>
+                                <th>Confidence</th>
+                            </tr>
+                        </thead>
+                        <tbody id="detectedObjectsBody">
+                            <tr><td>person</td><td>1</td><td>0.94</td></tr>
+                            <tr><td>forklift</td><td>2</td><td>0.91</td></tr>
+                            <tr><td>helmet</td><td>3</td><td>0.89</td></tr>
+                            <tr><td>falling</td><td>4</td><td>0.87</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="risk-panel">
+                    <div class="risk-panel-title"><i class="fas fa-triangle-exclamation"></i> 물리적 위험 지표</div>
+                    <table class="risk-table">
+                        <thead>
+                            <tr>
+                                <th>항목</th>
+                                <th>값</th>
+                                <th>기준</th>
+                                <th>판정</th>
+                                <th>근거</th>
+                            </tr>
+                        </thead>
+                        <tbody id="physicalRiskBody">
+                            <tr>
+                                <td>Distance</td>
+                                <td>1.1 m</td>
+                                <td>&ge; 2.0 m</td>
+                                <td><span class="status-chip danger">위험</span></td>
+                                <td>KOSHA G-102</td>
+                            </tr>
+                            <tr>
+                                <td>TTC</td>
+                                <td>0.9 s</td>
+                                <td>&ge; 1.5 s</td>
+                                <td><span class="status-chip danger">위험</span></td>
+                                <td>TTC 기준</td>
+                            </tr>
+                            <tr>
+                                <td>Collision Prob.</td>
+                                <td class="risk-value-danger">0.87</td>
+                                <td>&lt; 0.30</td>
+                                <td><span class="status-chip danger">위험</span></td>
+                                <td>내부 기준</td>
+                            </tr>
+                            <tr>
+                                <td>Zone Overlap</td>
+                                <td class="risk-value-danger">True</td>
+                                <td>False</td>
+                                <td><span class="status-chip danger">위험</span></td>
+                                <td>동선 분리 원칙</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="risk-panel full">
+                    <div class="risk-panel-title"><i class="fas fa-table-list"></i> 위험성 평가표</div>
+                    <table class="risk-table">
+                        <thead>
+                            <tr>
+                                <th>작업명 / 공정</th>
+                                <th>유해·위험요인</th>
+                                <th>가능성</th>
+                                <th>위험도</th>
+                                <th>수준</th>
+                                <th>현재 안전대책</th>
+                                <th>개선 필요사항</th>
+                            </tr>
+                        </thead>
+                        <tbody id="riskAssessmentBody">
+                            <tr>
+                                <td>지게차 운영</td>
+                                <td class="left">지게차·보행자 충돌</td>
+                                <td>4</td>
+                                <td class="risk-value-danger">20</td>
+                                <td class="risk-level-high">High</td>
+                                <td class="left">경광등 / 후방 경보</td>
+                                <td class="left">작업구역 분리 강화</td>
+                            </tr>
+                            <tr>
+                                <td>적재 작업</td>
+                                <td class="left">낙하·전도</td>
+                                <td>3</td>
+                                <td>12</td>
+                                <td class="risk-level-medium">Medium</td>
+                                <td class="left">적재 높이 제한</td>
+                                <td class="left">고정 상태 점검 강화</td>
+                            </tr>
+                            <tr>
+                                <td>통로 이동</td>
+                                <td class="left">동선 혼재 / 접근 제한</td>
+                                <td>2</td>
+                                <td>6</td>
+                                <td class="risk-level-low">Low</td>
+                                <td class="left">통로 표시</td>
+                                <td class="left">안전거리 유지</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+            <p>Playing the prepared safety-analysis stream with synchronized event logs.</p>
+        </section>
+    </main>
+
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+        <form action="{{ url_for('manage') }}" method="get" style="display: inline;">
+            <button type="submit"><i class="fas fa-map-marked-alt"></i> Manage Danger Zones</button>
+        </form>
+        <form action="{{ url_for('stats') }}" method="get" style="display: inline;">
+            <button type="submit"><i class="fas fa-chart-bar"></i> View Statistics</button>
+        </form>
+    </div>
+    
+    <footer>
+        <p>&copy; 2025 Sangyeongsi-Safety-Agent | All Rights Reserved</p>
+    </footer>
+
+    <script>
+        const analysisLogSchedules = {
+            "important_tb_detected_cam1_step5.mp4": [
+                { timeSec: 7, message: "낙상자 발생" },
+                { timeSec: 11, message: "지게차에 사람이 올라탐" }
+            ],
+            default: [
+                { timeSec: 2, message: "So Cute Retriever" }
+            ]
+        };
+
+        const riskDemoSnapshots = [
+            {
+                detected: [
+                    ["person", "1", "0.94"],
+                    ["forklift", "2", "0.91"],
+                    ["helmet", "3", "0.89"],
+                    ["falling", "4", "0.87"]
+                ],
+                physical: [
+                    ["Distance", "1.1 m", "&ge; 2.0 m", "위험", "KOSHA G-102", true],
+                    ["TTC", "0.9 s", "&ge; 1.5 s", "위험", "TTC 기준", true],
+                    ["Collision Prob.", "0.87", "&lt; 0.30", "위험", "내부 기준", true],
+                    ["Zone Overlap", "True", "False", "위험", "동선 분리 원칙", true]
+                ],
+                assessment: [
+                    ["지게차 운영", "지게차·보행자 충돌", "4", "20", "High", "경광등 / 후방 경보", "작업구역 분리 강화"],
+                    ["적재 작업", "낙하·전도", "3", "12", "Medium", "적재 높이 제한", "고정 상태 점검 강화"],
+                    ["통로 이동", "동선 혼재 / 접근 제한", "2", "6", "Low", "통로 표시", "안전거리 유지"]
+                ]
+            },
+            {
+                detected: [
+                    ["person", "1", "0.96"],
+                    ["forklift", "2", "0.93"],
+                    ["UA-13", "5", "0.86"],
+                    ["helmet", "3", "0.82"]
+                ],
+                physical: [
+                    ["Distance", "0.7 m", "&ge; 2.0 m", "위험", "KOSHA G-102", true],
+                    ["TTC", "0.6 s", "&ge; 1.5 s", "위험", "TTC 기준", true],
+                    ["Collision Prob.", "0.93", "&lt; 0.30", "위험", "내부 기준", true],
+                    ["Zone Overlap", "True", "False", "위험", "동선 분리 원칙", true]
+                ],
+                assessment: [
+                    ["지게차 운영", "지게차 탑승 위험", "5", "25", "High", "경고 알림", "운전자 즉시 정지"],
+                    ["작업자 이동", "작업반경 침범", "4", "16", "High", "감시자 배치", "접근 통제 강화"],
+                    ["통로 이동", "안전거리 미확보", "3", "9", "Medium", "통로 표시", "우회 동선 확보"]
+                ]
+            },
+            {
+                detected: [
+                    ["person", "1", "0.92"],
+                    ["falling", "6", "0.90"],
+                    ["forklift", "2", "0.88"],
+                    ["helmet", "3", "0.84"]
+                ],
+                physical: [
+                    ["Distance", "2.4 m", "&ge; 2.0 m", "주의", "KOSHA G-102", false],
+                    ["TTC", "2.2 s", "&ge; 1.5 s", "주의", "TTC 기준", false],
+                    ["Collision Prob.", "0.41", "&lt; 0.30", "주의", "내부 기준", false],
+                    ["Zone Overlap", "False", "False", "정상", "동선 분리 원칙", false]
+                ],
+                assessment: [
+                    ["낙상 대응", "작업자 쓰러짐", "4", "20", "High", "CCTV 확인", "응급 대응 호출"],
+                    ["지게차 운영", "주변 작업자 근접", "3", "12", "Medium", "후방 경보", "일시 정지 유도"],
+                    ["통로 이동", "동선 분리 유지", "1", "3", "Low", "통로 표시", "상태 모니터링"]
+                ]
+            }
+        ];
+        let analysisLogTimers = [];
+        let riskDemoTimer = null;
+        let riskDemoIndex = 0;
+        let streamStartTime = null;
+        let currentVideoSourceName = "";
+        const presentationVideoPath = "video/important_tb_detected_CAM1_step5.mp4";
+        const presentationVideoName = "important_tb_detected_CAM1_step5.mp4";
+
+        // Video feed control functions
+        function startStream() {
+            fetch('/set_video_source', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    source_type: 'video',
+                    video_path: presentationVideoPath
+                })
+            })
+            .finally(() => {
+                currentVideoSourceName = presentationVideoName;
+                const videoFeed = document.getElementById('videoFeed');
+                videoFeed.src = "{{ url_for('video_feed') }}?" + new Date().getTime();
+                videoFeed.classList.remove('hidden');
+                startTimedAnalysisLogs();
+                startRiskDemoCycle();
+            });
+        }
+
+        function stopStream() {
+            const videoFeed = document.getElementById('videoFeed');
+            videoFeed.src = "";
+            videoFeed.classList.add('hidden');
+            clearTimedAnalysisLogs();
+            stopRiskDemoCycle();
+        }
+
+        function startRiskDemoCycle() {
+            stopRiskDemoCycle();
+            riskDemoIndex = 0;
+            applyRiskSnapshot(riskDemoSnapshots[riskDemoIndex]);
+            riskDemoTimer = setInterval(() => {
+                riskDemoIndex = (riskDemoIndex + 1) % riskDemoSnapshots.length;
+                applyRiskSnapshot(riskDemoSnapshots[riskDemoIndex]);
+            }, 5000);
+        }
+
+        function stopRiskDemoCycle() {
+            if (riskDemoTimer) {
+                clearInterval(riskDemoTimer);
+                riskDemoTimer = null;
+            }
+        }
+
+        function applyRiskSnapshot(snapshot) {
+            const detectedBody = document.getElementById('detectedObjectsBody');
+            const physicalBody = document.getElementById('physicalRiskBody');
+            const assessmentBody = document.getElementById('riskAssessmentBody');
+
+            detectedBody.innerHTML = snapshot.detected.map(row => `
+                <tr>
+                    <td>${row[0]}</td>
+                    <td>${row[1]}</td>
+                    <td>${row[2]}</td>
+                </tr>
+            `).join('');
+
+            physicalBody.innerHTML = snapshot.physical.map(row => `
+                <tr>
+                    <td>${row[0]}</td>
+                    <td class="${row[5] ? 'risk-value-danger' : ''}">${row[1]}</td>
+                    <td>${row[2]}</td>
+                    <td><span class="status-chip ${getStatusClass(row[3])}">${row[3]}</span></td>
+                    <td>${row[4]}</td>
+                </tr>
+            `).join('');
+
+            assessmentBody.innerHTML = snapshot.assessment.map(row => {
+                const levelClass = row[4] === 'High' ? 'risk-level-high' : row[4] === 'Medium' ? 'risk-level-medium' : 'risk-level-low';
+                const riskClass = row[4] === 'High' ? 'risk-value-danger' : '';
+                return `
+                    <tr>
+                        <td>${row[0]}</td>
+                        <td class="left">${row[1]}</td>
+                        <td>${row[2]}</td>
+                        <td class="${riskClass}">${row[3]}</td>
+                        <td class="${levelClass}">${row[4]}</td>
+                        <td class="left">${row[5]}</td>
+                        <td class="left">${row[6]}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            document.querySelectorAll('.risk-panel').forEach(panel => {
+                panel.classList.add('updated');
+                setTimeout(() => panel.classList.remove('updated'), 450);
+            });
+        }
+
+        function getStatusClass(status) {
+            if (status === '위험') {
+                return 'danger';
+            }
+            if (status === '주의') {
+                return 'warning';
+            }
+            return 'safe';
+        }
+
+        function startTimedAnalysisLogs() {
+            clearTimedAnalysisLogs();
+            streamStartTime = Date.now();
+            resetAnalysisLogPanel();
+
+            fetch('/get_current_source')
+                .then(response => response.json())
+                .then(data => {
+                    currentVideoSourceName = data.name || "";
+                    scheduleTimedAnalysisLogs();
+                })
+                .catch(() => {
+                    scheduleTimedAnalysisLogs();
+                });
+        }
+
+        function scheduleTimedAnalysisLogs() {
+            const scheduleKey = currentVideoSourceName.toLowerCase();
+            const timedAnalysisLogs = analysisLogSchedules[scheduleKey] || analysisLogSchedules.default || [];
+
+            timedAnalysisLogs.forEach(log => {
+                const delayMs = log.delayMs ?? (log.timeSec * 1000);
+                const timerId = setTimeout(() => {
+                    addAnalysisLog(log.message, delayMs);
+                }, delayMs);
+                analysisLogTimers.push(timerId);
+            });
+        }
+
+        function clearTimedAnalysisLogs() {
+            analysisLogTimers.forEach(timerId => clearTimeout(timerId));
+            analysisLogTimers = [];
+            streamStartTime = null;
+        }
+
+        function resetAnalysisLogPanel() {
+            const logList = document.getElementById('analysisLogList');
+            logList.innerHTML = '<p id="analysisEmpty" class="analysis-empty">Waiting for analysis results...</p>';
+        }
+
+        function addAnalysisLog(message, elapsedMs) {
+            const logList = document.getElementById('analysisLogList');
+            const emptyState = document.getElementById('analysisEmpty');
+            const elapsedSeconds = (elapsedMs / 1000).toFixed(1);
+
+            if (emptyState) {
+                emptyState.remove();
+            }
+
+            const item = document.createElement('div');
+            const timeLabel = document.createElement('span');
+            const messageLabel = document.createElement('div');
+
+            item.className = 'analysis-log-item';
+            timeLabel.className = 'analysis-log-time';
+            messageLabel.className = 'analysis-log-message';
+            timeLabel.textContent = `T+${elapsedSeconds}s`;
+            messageLabel.textContent = message;
+            item.appendChild(timeLabel);
+            item.appendChild(messageLabel);
+            logList.appendChild(item);
+        }
+
+        // Video source selection
+        document.addEventListener('DOMContentLoaded', function() {
+            const cameraSourceBtn = document.getElementById('cameraSource');
+            const videoSourceBtn = document.getElementById('videoSource');
+            const videoList = document.getElementById('videoList');
+            const cameraList = document.getElementById('cameraList');
+            const cameraSelect = document.getElementById('cameraSelect');
+            const refreshCamerasBtn = document.getElementById('refreshCamerasBtn');
+            
+            // Load available cameras when page loads
+            loadAvailableCameras();
+            initializeCurrentSource();
+            
+            // Refresh cameras button
+            refreshCamerasBtn.addEventListener('click', function() {
+                loadAvailableCameras();
+            });
+            
+            // Handle camera selection
+            cameraSelect.addEventListener('change', function() {
+                const selectedCameraIndex = this.value;
+                if (selectedCameraIndex) {
+                    fetch('/set_camera', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            camera_index: selectedCameraIndex
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            // Refresh stream if it's active
+                            const videoFeed = document.getElementById('videoFeed');
+                            if (!videoFeed.classList.contains('hidden')) {
+                                startStream();
+                            }
+                        } else {
+                            alert(data.error || 'Error setting camera');
+                        }
+                    });
+                }
+            });
+            
+            // Function to load available cameras
+            function loadAvailableCameras() {
+                cameraSelect.innerHTML = '<option value="" disabled selected>Loading cameras...</option>';
+                
+                fetch('/get_available_cameras')
+                    .then(response => response.json())
+                    .then(data => {
+                        cameraSelect.innerHTML = '<option value="" disabled selected>Select a camera...</option>';
+                        
+                        if (data.cameras.length === 0) {
+                            cameraSelect.innerHTML += '<option value="" disabled>No cameras detected</option>';
+                        } else {
+                            data.cameras.forEach(camera => {
+                                const option = document.createElement('option');
+                                option.value = camera.index;
+                                option.textContent = camera.name;
+                                cameraSelect.appendChild(option);
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        cameraSelect.innerHTML = '<option value="" disabled selected>Error loading cameras</option>';
+                        console.error('Error loading cameras:', error);
+                    });
+            }
+            
+            function showVideoSource() {
+                cameraSourceBtn.classList.remove('active');
+                videoSourceBtn.classList.add('active');
+                videoList.classList.add('active');
+                cameraList.classList.remove('active');
+            }
+
+            function showCameraSource() {
+                videoSourceBtn.classList.remove('active');
+                cameraSourceBtn.classList.add('active');
+                videoList.classList.remove('active');
+                cameraList.classList.add('active');
+            }
+
+            function loadAvailableVideos(selectedName = '') {
+                videoList.innerHTML = '<p id="loadingVideos">Loading available videos...</p>';
+
+                fetch('/get_available_videos')
+                    .then(response => response.json())
+                    .then(data => {
+                        const loadingElement = document.getElementById('loadingVideos');
+                        if (loadingElement) {
+                            loadingElement.remove();
+                        }
+                        
+                        if (data.videos.length === 0) {
+                            const noVideos = document.createElement('p');
+                            noVideos.textContent = 'No video files found';
+                            videoList.appendChild(noVideos);
+                        } else {
+                            data.videos.forEach(video => {
+                                const videoItem = document.createElement('div');
+                                videoItem.className = 'video-item';
+                                videoItem.innerHTML = `<i class="fas fa-file-video"></i> ${video.name}`;
+                                videoItem.dataset.path = video.path;
+                                if (video.name === selectedName) {
+                                    videoItem.classList.add('selected');
+                                }
+                                
+                                videoItem.addEventListener('click', function() {
+                                    // Remove selected class from all items
+                                    document.querySelectorAll('.video-item').forEach(item => {
+                                        item.classList.remove('selected');
+                                    });
+                                    
+                                    // Add selected class to clicked item
+                                    this.classList.add('selected');
+                                    
+                                    // Set video source
+                                    fetch('/set_video_source', {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                        },
+                                        body: JSON.stringify({
+                                            source_type: 'video',
+                                            video_path: this.dataset.path
+                                        })
+                                    })
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        if (data.status === 'success') {
+                                            // Refresh stream if it's active
+                                            const videoFeed = document.getElementById('videoFeed');
+                                            if (!videoFeed.classList.contains('hidden')) {
+                                                startStream();
+                                            }
+                                        }
+                                    });
+                                });
+                                
+                                videoList.appendChild(videoItem);
+                            });
+                        }
+                    });
+            }
+
+            function initializeCurrentSource() {
+                fetch('/get_current_source')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.type === 'video') {
+                            currentVideoSourceName = data.name || "";
+                            showVideoSource();
+                            loadAvailableVideos(data.name);
+                            startStream();
+                        } else {
+                            currentVideoSourceName = "";
+                            showCameraSource();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading current source:', error);
+                    });
+            }
+            
+            // Load available videos when clicking on video source button
+            videoSourceBtn.addEventListener('click', function() {
+                showVideoSource();
+                loadAvailableVideos();
+            });
+            
+            // Switch to camera source
+            cameraSourceBtn.addEventListener('click', function() {
+                showCameraSource();
+                
+                // Set camera as source
+                fetch('/set_video_source', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        source_type: 'camera'
+                    })
+                })
+                .then(response => response.json())
+                                    .then(data => {
+                                        if (data.status === 'success') {
+                                            currentVideoSourceName = video.name;
+                                            // Refresh stream if it's active
+                                            const videoFeed = document.getElementById('videoFeed');
+                                            if (!videoFeed.classList.contains('hidden')) {
+                            startStream();
+                        }
+                    }
+                });
+            });
+            
+            // Notification system
+            const notificationBell = document.getElementById('notificationBell');
+            const notificationPanel = document.getElementById('notificationPanel');
+            const notificationList = document.getElementById('notificationList');
+            const clearAllBtn = document.getElementById('clearAllNotifications');
+            const unsafeStatus = document.getElementById('unsafeStatus');
+            const alertSound = document.getElementById('alertSound');
+            
+            // Socket.IO connection (WebSocket)
+            const socket = io();
+            
+            // Fallback polling for browsers that might not support WebSockets
+            const checkInterval = setInterval(checkNotifications, 3000);
+            
+            // WebSocket handler for safety alerts
+            socket.on('safety_alert', function(data) {
+                console.log('Received safety alert via WebSocket:', data);
+                updateNotificationUI(data);
+            });
+            
+            // Listen for clear notifications event
+            socket.on('clear_alerts', function(data) {
+                if (data.success) {
+                    resetNotificationState();
+                }
+            });
+
+            // Listen for zone updates
+            socket.on('zone_updated', function(data) {
+                console.log('Zones updated:', data);
+                // Refresh both video feeds if they are active
+                const videoFeed = document.getElementById('videoFeed');
+                
+                if (!videoFeed.classList.contains('hidden')) {
+                    videoFeed.src = "{{ url_for('video_feed') }}?" + new Date().getTime();
+                }
+            });
+            
+            // Toggle notification panel
+            notificationBell.addEventListener('click', function() {
+                notificationPanel.classList.toggle('active');
+            });
+            
+            // Clear all notifications
+            clearAllBtn.addEventListener('click', function() {
+                fetch('/api/notifications/clear', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        resetNotificationState();
+                    }
+                });
+            });
+            
+            // Function to check notifications (polling fallback)
+            function checkNotifications() {
+                fetch('/api/notifications/status')
+                    .then(response => response.json())
+                    .then(data => {
+                        updateNotificationUI(data);
+                    });
+            }
+            
+            // Function to update notification UI based on alert data
+            function updateNotificationUI(data) {
+                if (data.active) {
+                    // Show UNSAFE status
+                    unsafeStatus.style.display = 'flex';
+                    notificationBell.classList.add('has-alert');
+                    notificationBell.innerHTML = `<i class="fas fa-bell"></i> <span class="badge">${data.count}</span>`;
+                    
+                    // Play alert sound
+                    playAlertSound();
+                    
+                    // Add notification to panel
+                    if (data.timestamp) {
+                        addNotificationItem(data);
+                    }
+                } else {
+                    resetNotificationState();
+                }
+            }
+            
+            // Function to add notification item to panel
+            function addNotificationItem(data) {
+                const item = document.createElement('div');
+                item.className = 'notification-item danger';
+                
+                const date = new Date(data.timestamp);
+                const timeStr = date.toLocaleString();
+                
+                let itemContent = `
+                    <div>
+                        <strong>${data.message}</strong>
+                        <div>${timeStr}</div>
+                    </div>
+                `;
+                
+                if (data.screenshot) {
+                    itemContent += `<img src="${data.screenshot}" alt="Alert Screenshot" class="screenshot-preview">`;
+                }
+                
+                item.innerHTML = itemContent;
+                notificationList.prepend(item);
+            }
+            
+            // Function to reset notification state
+            function resetNotificationState() {
+                unsafeStatus.style.display = 'none';
+                notificationBell.classList.remove('has-alert');
+                notificationBell.innerHTML = `<i class="fas fa-bell"></i>`;
+                notificationList.innerHTML = '';
+            }
+            
+            // Function to play alert sound
+            function playAlertSound() {
+                alertSound.play().catch(e => {
+                    console.warn('Could not play alert sound:', e);
+                });
+            }
+        });
+    </script>
+</body>
+</html>

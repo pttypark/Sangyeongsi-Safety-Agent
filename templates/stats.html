@@ -1,0 +1,813 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <title>Sangyeongsi-Safety-Agent | Safety Statistics</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.0/socket.io.js"></script>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --accent-color: #e74c3c;
+            --success-color: #2ecc71;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --light-color: #ecf0f1;
+            --dark-color: #34495e;
+            --card-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        main {
+            flex: 1;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        
+        .dashboard-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border-radius: 8px;
+            box-shadow: var(--card-shadow);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .header-content {
+            margin-bottom: 1.5rem;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .header-actions {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .header-btn {
+            display: inline-block;
+            padding: 0.8rem 1.5rem;
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid white;
+            border-radius: 30px;
+            font-weight: bold;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            margin: 0 0.5rem;
+        }
+        
+        .header-btn:hover {
+            background-color: white;
+            color: var(--primary-color);
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .screenshot-btn {
+            font-size: 1.1rem;
+            animation: pulse-light 2s infinite;
+        }
+        
+        @keyframes pulse-light {
+            0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 255, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+        }
+        
+        .dashboard-header h1 {
+            margin: 0;
+            font-size: 2.2rem;
+            position: relative;
+        }
+        
+        .dashboard-header p {
+            margin: 0.5rem 0 0;
+            font-size: 1.1rem;
+            opacity: 0.9;
+            position: relative;
+        }
+        
+        .dashboard-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+            transform: rotate(30deg);
+        }
+        
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: var(--card-shadow);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        
+        .stat-card .icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        
+        .stat-card.total .icon {
+            background-color: var(--primary-color);
+        }
+        
+        .stat-card.safe .icon {
+            background-color: var(--success-color);
+        }
+        
+        .stat-card.unsafe .icon {
+            background-color: var(--danger-color);
+        }
+        
+        .stat-card.ratio .icon {
+            background-color: var(--warning-color);
+        }
+        
+        .stat-card h2 {
+            font-size: 2.5rem;
+            margin: 0.5rem 0;
+            font-weight: 700;
+        }
+        
+        .stat-card p {
+            margin: 0;
+            color: #666;
+            font-size: 1rem;
+        }
+        
+        .stat-card.total h2 {
+            color: var(--primary-color);
+        }
+        
+        .stat-card.safe h2 {
+            color: var(--success-color);
+        }
+        
+        .stat-card.unsafe h2 {
+            color: var(--danger-color);
+        }
+        
+        .stat-card.ratio h2 {
+            color: var(--warning-color);
+        }
+        
+        .chart-container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 2rem;
+            height: 400px;
+        }
+        
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 0.5rem;
+        }
+        
+        .chart-header h2 {
+            margin: 0;
+            font-size: 1.2rem;
+            color: var(--secondary-color);
+        }
+        
+        .chart-header .timestamp {
+            font-size: 0.9rem;
+            color: #888;
+        }
+        
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .action-buttons button {
+            padding: 0.8rem 1.5rem;
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background-color 0.3s;
+        }
+        
+        .action-buttons button:hover {
+            background-color: #34495e;
+        }
+
+        /* Badge for compliance rate */
+        .compliance-badge {
+            display: inline-block;
+            padding: 0.3rem 0.6rem;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            color: white;
+            font-weight: bold;
+            margin-top: 0.5rem;
+        }
+        
+        .compliance-badge.good {
+            background-color: var(--success-color);
+        }
+        
+        .compliance-badge.warning {
+            background-color: var(--warning-color);
+        }
+        
+        .compliance-badge.danger {
+            background-color: var(--danger-color);
+        }
+        
+        /* Animation for number changes */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .stat-card h2.changed {
+            animation: pulse 0.5s ease;
+        }
+        
+        .toggle-views {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            gap: 0.5rem;
+        }
+        
+        .toggle-views button {
+            padding: 0.5rem 1rem;
+            background-color: #eee;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .toggle-views button.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <header class="navbar">
+        <div class="logo"><i class="fas fa-shield-alt"></i> Sangyeongsi-Safety-Agent</div>
+        <nav>
+            <a href="{{ url_for('index') }}" class="nav-item"><i class="fas fa-shield-alt"></i> Safety Monitor</a>
+            <a href="{{ url_for('stats') }}" class="nav-item"><i class="fas fa-chart-bar"></i> Statistics</a>
+            <a href="{{ url_for('manage') }}" class="nav-item"><i class="fas fa-map-marked-alt"></i> Manage</a>
+            <div class="nav-item notification" title="Notifications" id="notificationBell"><i class="fas fa-bell"></i></div>
+        </nav>
+    </header>
+    
+    <!-- Notification Panel -->
+    <div class="notification-panel" id="notificationPanel">
+        <div id="unsafeStatus" class="unsafe-status" style="display: none;">
+            <div class="unsafe-icon">⚠️</div>
+            <div class="unsafe-text">UNSAFE</div>
+        </div>
+        <h3>Safety Alerts</h3>
+        <button id="clearAllNotifications" style="margin-top: 10px;"><i class="fas fa-trash-alt"></i> Clear All</button>
+        <div id="notificationList">
+            <!-- Notifications will be populated here -->
+        </div>
+    </div>
+
+    <main>
+        <!-- Dashboard Header with integrated Screenshot button -->
+        <section class="dashboard-header">
+            <div class="header-content">
+                <h1><i class="fas fa-chart-line"></i> Safety Compliance Analytics</h1>
+                <p>Real-time safety management for PPE compliance and field incidents</p>
+            </div>
+            <div class="header-actions">
+                <a href="{{ url_for('show_screenshots') }}" class="header-btn screenshot-btn">
+                    <i class="fas fa-camera"></i> View Screenshots
+                </a>
+            </div>
+        </section>
+
+        <!-- Toggle Views -->
+        <div class="toggle-views">
+            <button id="realtime-btn" class="active">Real-time</button>
+            <button id="summary-btn">Summary</button>
+        </div>
+
+        <!-- Stats Cards -->
+        <section class="stats-container">
+            <div class="stat-card total">
+                <div class="icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h2 id="total-persons">0</h2>
+                <p>Total Detected Persons</p>
+            </div>
+            
+            <div class="stat-card safe">
+                <div class="icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h2 id="with-ppe">0</h2>
+                <p>Workers with PPE</p>
+            </div>
+            
+            <div class="stat-card unsafe">
+                <div class="icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <h2 id="without-ppe">0</h2>
+                <p>Workers without PPE</p>
+            </div>
+            
+            <div class="stat-card ratio">
+                <div class="icon">
+                    <i class="fas fa-percentage"></i>
+                </div>
+                <h2 id="compliance-rate">0%</h2>
+                <p>Safety Compliance Rate</p>
+                <div id="compliance-badge" class="compliance-badge danger">Poor</div>
+            </div>
+        </section>
+        
+        <!-- Charts Grid -->
+        <section class="charts-grid">
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h2><i class="fas fa-chart-pie"></i> PPE Compliance Distribution</h2>
+                    <span class="timestamp" id="date">Loading...</span>
+                </div>
+                <canvas id="ppeChart"></canvas>
+            </div>
+            
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h2><i class="fas fa-chart-bar"></i> Detection Timeline</h2>
+                    <span class="timestamp">Last 10 minutes</span>
+                </div>
+                <canvas id="timelineChart"></canvas>
+            </div>
+        </section>
+        
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <button id="export-data-btn"><i class="fas fa-file-export"></i> Export Data</button>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 Sangyeongsi-Safety-Agent | All Rights Reserved</p>
+    </footer>
+
+    <script>
+        // Initialize charts
+        Chart.register(ChartDataLabels); // Register the datalabels plugin
+        
+        // Pie chart for PPE compliance
+        const ctx = document.getElementById('ppeChart').getContext('2d');
+        const ppeChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['With PPE', 'Without PPE'],
+                datasets: [{
+                    data: [0, 0],
+                    backgroundColor: ['#2ecc71', '#e74c3c'],
+                    borderColor: ['#fff', '#fff'],
+                    borderWidth: 2,
+                    hoverOffset: 10
+                }]
+            },
+            options: {
+                responsive: true,
+                cutout: '60%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
+                    },
+                    datalabels: {
+                        color: '#fff',
+                        font: {
+                            weight: 'bold',
+                            size: 14
+                        },
+                        formatter: (value, ctx) => {
+                            const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                            if (total === 0) return '';
+                            return Math.round((value / total) * 100) + '%';
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                                return `${label}: ${value} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Timeline chart for detection history
+        const timelineCtx = document.getElementById('timelineChart').getContext('2d');
+        const timeData = {
+            labels: Array(10).fill('').map((_, i) => `-${9-i}m`),
+            withPPE: Array(10).fill(0),
+            withoutPPE: Array(10).fill(0)
+        };
+        
+        const timelineChart = new Chart(timelineCtx, {
+            type: 'bar',
+            data: {
+                labels: timeData.labels,
+                datasets: [
+                    {
+                        label: 'With PPE',
+                        data: timeData.withPPE,
+                        backgroundColor: '#2ecc71',
+                        borderColor: '#2ecc71',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Without PPE',
+                        data: timeData.withoutPPE,
+                        backgroundColor: '#e74c3c',
+                        borderColor: '#e74c3c',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        stacked: true,
+                        grid: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        stacked: true,
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    }
+                }
+            }
+        });
+        
+        // Keep track of previous stats for animation
+        let prevStats = {
+            total_persons: 0,
+            with_ppe: 0,
+            without_ppe: 0
+        };
+        
+        // Update timeline data
+        function updateTimelineData(withPPE, withoutPPE) {
+            // Shift all data points one position left
+            timeData.withPPE.shift();
+            timeData.withoutPPE.shift();
+            
+            // Add new data points at the end
+            timeData.withPPE.push(withPPE);
+            timeData.withoutPPE.push(withoutPPE);
+            
+            // Update the chart
+            timelineChart.data.datasets[0].data = timeData.withPPE;
+            timelineChart.data.datasets[1].data = timeData.withoutPPE;
+            timelineChart.update();
+        }
+        
+        // Update statistical elements with animation
+        function updateStatsWithAnimation(element, newValue, prevValue) {
+            if (newValue !== prevValue) {
+                element.classList.add('changed');
+                setTimeout(() => {
+                    element.classList.remove('changed');
+                }, 500);
+            }
+            element.textContent = newValue;
+        }
+        
+        // Update compliance badge based on rate
+        function updateComplianceBadge(rate) {
+            const badge = document.getElementById('compliance-badge');
+            
+            if (rate >= 90) {
+                badge.className = 'compliance-badge good';
+                badge.textContent = 'Excellent';
+            } else if (rate >= 70) {
+                badge.className = 'compliance-badge good';
+                badge.textContent = 'Good';
+            } else if (rate >= 50) {
+                badge.className = 'compliance-badge warning';
+                badge.textContent = 'Fair';
+            } else if (rate > 0) {
+                badge.className = 'compliance-badge danger';
+                badge.textContent = 'Poor';
+            } else {
+                badge.className = 'compliance-badge';
+                badge.textContent = 'N/A';
+            }
+        }
+        
+        // Main function to fetch and update statistics
+        function fetchStats() {
+            fetch('/get_ppe_stats')
+                .then(response => response.json())
+                .then(data => {
+                    // Update date
+                    document.getElementById('date').innerText = data.date;
+                    
+                    // Update stats with animation
+                    const totalElement = document.getElementById('total-persons');
+                    const withPPEElement = document.getElementById('with-ppe');
+                    const withoutPPEElement = document.getElementById('without-ppe');
+                    
+                    updateStatsWithAnimation(totalElement, data.total_persons, prevStats.total_persons);
+                    updateStatsWithAnimation(withPPEElement, data.with_ppe, prevStats.with_ppe);
+                    updateStatsWithAnimation(withoutPPEElement, data.without_ppe, prevStats.without_ppe);
+                    
+                    // Calculate and update compliance rate
+                    let complianceRate = 0;
+                    if (data.total_persons > 0) {
+                        complianceRate = Math.round((data.with_ppe / data.total_persons) * 100);
+                    }
+                    document.getElementById('compliance-rate').textContent = complianceRate + '%';
+                    updateComplianceBadge(complianceRate);
+                    
+                    // Update pie chart
+                    ppeChart.data.datasets[0].data = [data.with_ppe, data.without_ppe];
+                    ppeChart.update();
+                    
+                    // Update timeline chart with each data fetch
+                    updateTimelineData(data.with_ppe, data.without_ppe);
+                    
+                    // Store current stats for next comparison
+                    prevStats = {
+                        total_persons: data.total_persons,
+                        with_ppe: data.with_ppe,
+                        without_ppe: data.without_ppe
+                    };
+                })
+                .catch(error => {
+                    console.error('Error fetching PPE stats:', error);
+                });
+        }
+        
+        // Fetch stats history
+        function fetchStatsHistory() {
+            fetch('/get_ppe_stats_history')
+                .then(response => response.json())
+                .then(data => {
+                    // Process the historical data for visualization
+                    const timelineLabels = [];
+                    const withPPEData = [];
+                    const withoutPPEData = [];
+                    
+                    // Process last 10 entries for the timeline chart
+                    const displayData = data.slice(-10);
+                    
+                    displayData.forEach(entry => {
+                        const date = new Date(entry.timestamp);
+                        timelineLabels.push(date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}));
+                        withPPEData.push(entry.with_ppe);
+                        withoutPPEData.push(entry.without_ppe);
+                    });
+                    
+                    // Update timeline chart with historical data when in summary view
+                    if (!document.getElementById('realtime-btn').classList.contains('active')) {
+                        timelineChart.data.labels = timelineLabels;
+                        timelineChart.data.datasets[0].data = withPPEData;
+                        timelineChart.data.datasets[1].data = withoutPPEData;
+                        timelineChart.update();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching stats history:', error);
+                });
+        }
+        
+        // Update the toggle views buttons to use the appropriate data
+        document.getElementById('realtime-btn').addEventListener('click', function() {
+            this.classList.add('active');
+            document.getElementById('summary-btn').classList.remove('active');
+            // Switch to real-time data
+            timelineChart.data.labels = Array(10).fill('').map((_, i) => `-${9-i}m`);
+            timelineChart.data.datasets[0].data = timeData.withPPE;
+            timelineChart.data.datasets[1].data = timeData.withoutPPE;
+            timelineChart.update();
+        });
+        
+        document.getElementById('summary-btn').addEventListener('click', function() {
+            this.classList.add('active');
+            document.getElementById('realtime-btn').classList.remove('active');
+            // Load historical data
+            fetchStatsHistory();
+        });
+        
+        // Call fetchStats immediately and then every second
+        fetchStats();
+        setInterval(fetchStats, 1000);
+        
+        // Call fetchStatsHistory once at startup to load data
+        fetchStatsHistory();
+        // Then also fetch history every minute to update summary view if active
+        setInterval(fetchStatsHistory, 60000);
+        
+        // Modify the export button to include all historical data
+        document.getElementById('export-data-btn').addEventListener('click', function() {
+            fetch('/get_ppe_stats_history')
+                .then(response => response.json())
+                .then(data => {
+                    let csvContent = "Date,Total Persons,With PPE,Without PPE,Compliance Rate\n";
+                    
+                    data.forEach(entry => {
+                        const date = new Date(entry.timestamp).toLocaleString();
+                        const total = entry.total_persons;
+                        const withPPE = entry.with_ppe;
+                        const withoutPPE = entry.without_ppe;
+                        const complianceRate = total > 0 ? Math.round((withPPE / total) * 100) + '%' : '0%';
+                        
+                        csvContent += `${date},${total},${withPPE},${withoutPPE},${complianceRate}\n`;
+                    });
+                    
+                    // Create download link
+                    const blob = new Blob([csvContent], { type: 'text/csv' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = `ppe_stats_history_${new Date().toISOString().split('T')[0]}.csv`;
+                    
+                    // Trigger download
+                    document.body.appendChild(a);
+                    a.click();
+                    
+                    // Cleanup
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                })
+                .catch(error => {
+                    console.error('Error exporting stats history:', error);
+                });
+        });
+        
+        // Initialize Socket.IO
+        const socket = io();
+        
+        // Handle socket connection
+        socket.on('connect', function() {
+            console.log('Socket connected');
+        });
+        
+        // Handle safety alerts
+        socket.on('safety_alert', function(data) {
+            console.log('Received safety alert:', data);
+            
+            // Update notification UI
+            if (data.active) {
+                const notificationBell = document.getElementById('notificationBell');
+                notificationBell.classList.add('has-alert');
+                notificationBell.innerHTML = `<i class="fas fa-bell"></i> <span class="badge">${data.count}</span>`;
+                
+                // Add notification to dropdown
+                if (data.timestamp) {
+                    const notificationList = document.getElementById('notificationList');
+                    const item = document.createElement('div');
+                    item.className = 'notification-item danger';
+                    
+                    const date = new Date(data.timestamp);
+                    const timeStr = date.toLocaleString();
+                    
+                    let itemContent = `
+                        <div>
+                            <strong>${data.message || 'Safety Alert'}</strong>
+                            <div>${timeStr}</div>
+                        </div>
+                    `;
+                    
+                    if (data.screenshot) {
+                        itemContent += `<img src="${data.screenshot}" alt="Alert Screenshot" class="screenshot-preview">`;
+                    }
+                    
+                    item.innerHTML = itemContent;
+                    notificationList.prepend(item);
+                }
+            }
+        });
+        
+        // Bell click toggle notification panel
+        document.getElementById('notificationBell').addEventListener('click', function() {
+            document.getElementById('notificationPanel').classList.toggle('active');
+        });
+        
+        // Clear notifications
+        document.getElementById('clearAllNotifications').addEventListener('click', function() {
+            fetch('/api/notifications/clear', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Reset notification UI
+                    const notificationBell = document.getElementById('notificationBell');
+                    notificationBell.classList.remove('has-alert');
+                    notificationBell.innerHTML = `<i class="fas fa-bell"></i>`;
+                    document.getElementById('notificationList').innerHTML = '';
+                    document.getElementById('unsafeStatus').style.display = 'none';
+                    document.getElementById('notificationPanel').classList.remove('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

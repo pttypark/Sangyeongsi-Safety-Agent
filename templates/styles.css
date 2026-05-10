@@ -1,0 +1,96 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+    margin: 0;
+    padding: 0;
+    text-align: center; /* Center the title */
+}
+
+.navbar {
+    display: flex;
+    justify-content: center; /* Center the nav items */
+    align-items: center; /* Align items vertically */
+    padding: 10px 20px;
+    background-color: #ffffff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.nav-item {
+    color: #333;
+    font-size: 18px;
+    margin: 0 10px; /* Add some space between nav items */
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center the video sections */
+    padding: 20px;
+}
+
+.video-section {
+    margin-bottom: 20px;
+    width: 100%;
+    max-width: 600px; /* Limit the width of video sections */
+}
+
+h2 {
+    font-size: 20px;
+    margin-bottom: 10px;
+}
+
+.video-feed {
+    width: 100%;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.buttons {
+    display: flex;
+    justify-content: center; /* Center the buttons */
+    gap: 10px; /* Add space between buttons */
+    padding: 10px 20px;
+}
+
+button {
+    padding: 10px 20px;
+    font-size: 16px;
+    background-color: #6666ff;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+button:hover {
+    background-color: #5555ee;
+}
+
+/* Media Queries for Responsive Design */
+@media (max-width: 768px) {
+    .navbar {
+        flex-direction: column; /* Stack nav items vertically */
+    }
+
+    .nav-item {
+        margin: 5px 0; /* Adjust margin for stacked items */
+    }
+
+    .container {
+        padding: 10px; /* Reduce padding on smaller screens */
+    }
+
+    .video-section {
+        max-width: 100%; /* Allow full width on smaller screens */
+    }
+
+    .buttons {
+        flex-direction: column; /* Stack buttons vertically */
+        gap: 5px; /* Adjust gap for stacked buttons */
+    }
+
+    button {
+        width: 100%; /* Full width buttons on smaller screens */
+    }
+}

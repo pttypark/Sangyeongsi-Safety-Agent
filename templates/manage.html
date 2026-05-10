@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Sangyeongsi-Safety-Agent | Manage Danger Zones</title>
+    <style>
+        .zone-management {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .zone-controls {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .zone-controls button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .zone-controls button:hover {
+            background-color: #45a049;
+        }
+        
+        .zone-controls button.delete {
+            background-color: #f44336;
+        }
+        
+        .zone-controls button.delete:hover {
+            background-color: #d32f2f;
+        }
+        
+        .video-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        
+        #zoneCanvas {
+            border: 2px solid #333;
+            background-color: transparent;
+            max-width: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        
+        #liveFeed {
+            position: relative;
+            z-index: 0;
+            max-width: 100%;
+        }
+        
+        .canvas-container {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .instructions {
+            background-color: #e7f3fe;
+            border-left: 6px solid #2196F3;
+            padding: 10px 15px;
+            margin-bottom: 20px;
+        }
+        
+        .zone-list {
+            margin-top: 20px;
+        }
+        
+        .zone-item {
+            background-color: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .zone-coordinates {
+            font-family: monospace;
+            color: #555;
+        }
+        
+        .no-zones {
+            text-align: center;
+            color: #777;
+            padding: 20px;
+        }
+        
+        .status-message {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            text-align: center;
+        }
+        
+        .success {
+            background-color: #dff0d8;
+            color: #3c763d;
+        }
+        
+        .error {
+            background-color: #f2dede;
+            color: #a94442;
+        }
+        
+        .model-settings {
+            margin: 20px 0;
+            padding: 15px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .setting-group {
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .setting-group input[type="number"] {
+            width: 60px;
+            padding: 5px;
+        }
+        
+        .setting-group input[type="range"] {
+            flex-grow: 1;
+        }
+        
+        #saveSettings {
+            margin-top: 10px;
+            padding: 8px 15px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <header class="navbar">
+        <div class="logo">Sangyeongsi-Safety-Agent</div>
+        <nav>
+            <a href="{{ url_for('index') }}" class="nav-item">Safety Monitor</a>
+            <a href="{{ url_for('index') }}" class="nav-item">Danger Zones</a>
+            <a href="{{ url_for('stats') }}" class="nav-item">Statistics</a>
+            <a href="{{ url_for('manage') }}" class="nav-item active">Manage</a>
+            <div class="nav-item notification" title="Notifications" id="notificationBell">🔔</div>
+        </nav>
+    </header>
+
+    <div class="zone-management">
+        <h1>Danger Zone Management</h1>
+        
+        <div class="current-source-info">
+            <h3>Current Source: <span id="currentSourceName">Loading...</span></h3>
+            <p>Make sure to define danger zones specific to this video source.</p>
+        </div>
+        
+        <div class="instructions">
+            <h3>Instructions:</h3>
+            <ol>
+                <li>Click "Draw Zone" to start drawing a new zone on the live camera feed.</li>
+                <li>Left-click on the canvas to add points to form a polygon.</li>
+                <li>Click "Save Zone" to save the drawn zone, or "Clear Points" to start over.</li>
+                <li>Use the "Delete" button next to a zone in the list to remove it, or "Clear All Zones" to delete all zones.</li>
+            </ol>
+        </div>
+        
+        <div class="model-settings">
+            <h3>Model Settings</h3>
+            <div class="setting-group">
+                <label>Confidence Threshold:
+                    <input type="number" id="confThreshold" min="0" max="1" step="0.1" value="0.8">
+                </label>
+                <input type="range" id="confRange" min="0" max="1" step="0.1" value="0.8">
+            </div>
+            <div class="setting-group">
+                <label>IoU Threshold:
+                    <input type="number" id="iouThreshold" min="0" max="1" step="0.1" value="0.4">
+                </label>
+                <input type="range" id="iouRange" min="0" max="1" step="0.1" value="0.4">
+            </div>
+            <button id="saveSettings">Save Thresholds</button>
+        </div>
+        
+        <div class="video-container">
+            <div class="canvas-container">
+                <img id="liveFeed" src="{{ url_for('manage_video_feed') }}" alt="Live Camera Feed">
+                <canvas id="zoneCanvas" width="1200" height="720"></canvas>
+            </div>
+        </div>
+        
+        <div class="zone-controls">
+            <div>
+                <button id="drawZoneBtn">Draw Zone</button>
+                <button id="stopDrawBtn">Stop Drawing</button>
+                <button id="saveZoneBtn">Save Zone</button>
+                <button id="clearPointsBtn">Clear Points</button>
+            </div>
+            <div>
+                <button id="clearAllBtn" class="delete">Clear All Zones</button>
+                <button id="refreshBtn">Refresh</button>
+            </div>
+        </div>
+        
+        <div id="statusMessage" class="status-message" style="display: none;"></div>
+        
+        <div class="zone-list">
+            <h3>Existing Danger Zones</h3>
+            <div id="zonesContainer">
+                <div class="no-zones">No danger zones defined yet</div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 Sangyeongsi-Safety-Agent | All Rights Reserved</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const canvas = document.getElementById('zoneCanvas');
+            const ctx = canvas.getContext('2d');
+            const liveFeed = document.getElementById('liveFeed');
+            const drawZoneBtn = document.getElementById('drawZoneBtn');
+            const stopDrawBtn = document.getElementById('stopDrawBtn');
+            const saveZoneBtn = document.getElementById('saveZoneBtn');
+            const clearPointsBtn = document.getElementById('clearPointsBtn');
+            const clearAllBtn = document.getElementById('clearAllBtn');
+            const refreshBtn = document.getElementById('refreshBtn');
+            const statusMessage = document.getElementById('statusMessage');
+            const zonesContainer = document.getElementById('zonesContainer');
+            
+            // Model threshold controls
+            const confNumber = document.getElementById('confThreshold');
+            const confRange = document.getElementById('confRange');
+            const iouNumber = document.getElementById('iouThreshold');
+            const iouRange = document.getElementById('iouRange');
+            const saveSettingsBtn = document.getElementById('saveSettings');
+            
+            let points = [];
+            let isDrawing = false;
+            let zones = [];
+
+            // Set canvas size to match the live feed
+            liveFeed.onload = function() {
+                canvas.width = liveFeed.width;
+                canvas.height = liveFeed.height;
+                loadZones();
+            };
+
+            // Redraw zones on each frame update
+            liveFeed.addEventListener('load', function() {
+                redraw();
+            });
+
+            // Zone management buttons
+            drawZoneBtn.addEventListener('click', function() {
+                startDrawing();
+                showStatus('Drawing mode - Left click to add points', 'success');
+            });
+            
+            stopDrawBtn.addEventListener('click', function() {
+                stopDrawing();
+                showStatus('Drawing stopped', 'success');
+            });
+            
+            saveZoneBtn.addEventListener('click', function() {
+                saveZone();
+            });
+            
+            clearPointsBtn.addEventListener('click', function() {
+                clearDrawing();
+                showStatus('Points cleared', 'success');
+            });
+            
+            clearAllBtn.addEventListener('click', function() {
+                if (confirm('Are you sure you want to delete ALL danger zones?')) {
+                    clearAllZones();
+                }
+            });
+            
+            refreshBtn.addEventListener('click', function() {
+                loadZones();
+                showStatus('Zones refreshed', 'success');
+            });
+            
+            // Canvas mouse events
+            canvas.addEventListener('mousedown', handleCanvasClick);
+            
+            // Sync number and range inputs for thresholds
+            [confNumber, confRange].forEach(input => {
+                input.addEventListener('input', e => {
+                    confNumber.value = confRange.value = e.target.value;
+                });
+            });
+
+            [iouNumber, iouRange].forEach(input => {
+                input.addEventListener('input', e => {
+                    iouNumber.value = iouRange.value = e.target.value;
+                });
+            });
+
+            // Save settings button
+            saveSettingsBtn.addEventListener('click', () => {
+                const settings = {
+                    conf: parseFloat(confNumber.value),
+                    iou: parseFloat(iouNumber.value)
+                };
+                
+                if (settings.conf < 0 || settings.conf > 1 || settings.iou < 0 || settings.iou > 1) {
+                    showStatus('Thresholds must be between 0 and 1', 'error');
+                    return;
+                }
+
+                fetch('/update_model_settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(settings)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === "success") {
+                        showStatus('Model settings updated', 'success');
+                    } else {
+                        showStatus(data.error || 'Error saving settings', 'error');
+                    }
+                });
+            });
+            
+            // Initialize by fetching existing zones
+            loadZones();
+            
+            function startDrawing() {
+                isDrawing = true;
+                points = [];
+                redraw();
+            }
+            
+            function stopDrawing() {
+                isDrawing = false;
+            }
+            
+            function clearDrawing() {
+                points = [];
+                redraw();
+            }
+            
+            function saveZone() {
+                if (points.length < 3) {
+                    showStatus('A zone must have at least 3 points!', 'error');
+                    return;
+                }
+                fetch('/save_zone', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ coordinates: points })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === "success") {
+                        showStatus('Zone saved successfully', 'success');
+                        points = [];
+                        loadZones();
+                    } else {
+                        showStatus(data.error || 'Error saving zone', 'error');
+                    }
+                })
+                .catch(error => {
+                    showStatus('Error saving zone: ' + error.message, 'error');
+                });
+            }
+            
+            function loadZones() {
+                fetch('/get_zones')
+                    .then(response => response.json())
+                    .then(data => {
+                        zones = data.zones || [];
+                        redraw();
+                        renderZonesList();
+                    })
+                    .catch(error => {
+                        showStatus('Error fetching zones: ' + error.message, 'error');
+                    });
+            }
+            
+            function clearAllZones() {
+                fetch('/get_zones')
+                    .then(response => response.json())
+                    .then(data => {
+                        const zoneCount = (data.zones || []).length;
+                        if (zoneCount === 0) {
+                            showStatus('No zones to clear', 'error');
+                            return;
+                        }
+                        // Delete all zones by repeatedly calling delete_zone
+                        let deleted = 0;
+                        const deleteNextZone = (index) => {
+                            if (index < 0) {
+                                showStatus('All zones cleared', 'success');
+                                loadZones();
+                                return;
+                            }
+                            fetch('/delete_zone', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ index: index })
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.status === "success") {
+                                    deleted++;
+                                    deleteNextZone(index - 1);
+                                } else {
+                                    showStatus(data.error || 'Error clearing zones', 'error');
+                                }
+                            })
+                            .catch(error => {
+                                showStatus('Error clearing zones: ' + error.message, 'error');
+                            });
+                        };
+                        deleteNextZone(zoneCount - 1);
+                    });
+            }
+            
+            function renderZonesList() {
+                if (zones.length === 0) {
+                    zonesContainer.innerHTML = '<div class="no-zones">No danger zones defined yet</div>';
+                    return;
+                }
+                
+                zonesContainer.innerHTML = '';
+                zones.forEach((zone, index) => {
+                    const zoneItem = document.createElement('div');
+                    zoneItem.className = 'zone-item';
+                    zoneItem.innerHTML = `
+                        <div>
+                            <strong>Zone ${index + 1}</strong>
+                            <div class="zone-coordinates">Points: ${zone.length}</div>
+                        </div>
+                        <button class="delete-zone-btn" data-zone-index="${index}">Delete</button>
+                    `;
+                    zonesContainer.appendChild(zoneItem);
+                    
+                    // Add event listener to delete button
+                    zoneItem.querySelector('.delete-zone-btn').addEventListener('click', function() {
+                        if (confirm('Delete this zone?')) {
+                            deleteZone(index);
+                        }
+                    });
+                });
+            }
+            
+            function deleteZone(index) {
+                fetch('/delete_zone', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ index: index })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === "success") {
+                        showStatus('Zone deleted', 'success');
+                        loadZones();
+                    } else {
+                        showStatus(data.error || 'Error deleting zone', 'error');
+                    }
+                })
+                .catch(error => {
+                    showStatus('Error deleting zone: ' + error.message, 'error');
+                });
+            }
+            
+            function handleCanvasClick(event) {
+                if (!isDrawing) return;
+                
+                const rect = canvas.getBoundingClientRect();
+                const x = event.clientX - rect.left;
+                const y = event.clientY - rect.top;
+                
+                if (event.button === 0) { // Left click - add point
+                    points.push([x, y]);
+                    redraw();
+                }
+            }
+            
+            function redraw() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw existing zones
+                zones.forEach((zone, index) => {
+                    if (zone.length > 1) {
+                        ctx.beginPath();
+                        ctx.moveTo(zone[0][0], zone[0][1]);
+                        for (let i = 1; i < zone.length; i++) {
+                            ctx.lineTo(zone[i][0], zone[i][1]);
+                        }
+                        ctx.closePath();
+                        ctx.strokeStyle = '#ffffff';
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+                        ctx.fill();
+                        
+                        // Label the zone
+                        ctx.fillStyle = 'white';
+                        ctx.font = '16px Arial';
+                        ctx.fillText(`Zone ${index}`, zone[0][0], zone[0][1] - 10);
+                    }
+                });
+                
+                // Draw current points being added
+                if (points.length > 0) {
+                    ctx.fillStyle = '#FF0000';
+                    points.forEach((point, index) => {
+                        ctx.beginPath();
+                        ctx.arc(point[0], point[1], 3, 0, Math.PI * 2);
+                        ctx.fill();
+                        
+                        if (index > 0) {
+                            ctx.beginPath();
+                            ctx.moveTo(points[index-1][0], points[index-1][1]);
+                            ctx.lineTo(point[0], point[1]);
+                            ctx.strokeStyle = '#FF0000';
+                            ctx.lineWidth = 2;
+                            ctx.stroke();
+                        }
+                    });
+                    
+                    // Draw closing line
+                    if (points.length > 1) {
+                        ctx.beginPath();
+                        ctx.moveTo(points[points.length-1][0], points[points.length-1][1]);
+                        ctx.lineTo(points[0][0], points[0][1]);
+                        ctx.strokeStyle = '#00FF00';
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                    }
+                }
+            }
+            
+            function showStatus(message, type) {
+                statusMessage.textContent = message;
+                statusMessage.className = `status-message ${type}`;
+                statusMessage.style.display = 'block';
+                
+                // Hide after 5 seconds
+                setTimeout(() => {
+                    statusMessage.style.display = 'none';
+                }, 5000);
+            }
+            
+            // Prevent context menu on canvas
+            canvas.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+            });
+
+            // Get information about the current source
+            fetch('/get_current_source')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('currentSourceName').textContent = data.name || 'Unknown';
+                })
+                .catch(error => {
+                    console.error('Error fetching current source:', error);
+                    document.getElementById('currentSourceName').textContent = 'Error loading source info';
+                });
+        });
+    </script>
+</body>
+</html>

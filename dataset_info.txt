@@ -1,0 +1,4 @@
+Dataset Information
+
+The dataset for this PPE Detection and Danger Zone Monitoring System project can be accessed through Roboflow using the following invitation link:
+https://app.roboflow.com/join/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ3b3Jrc3BhY2VJZCI6IjdvWVliY0NyRGpTSG1hcUE5bk5FZmZXcDJURDIiLCJyb2xlIjoib3duZXIiLCJpbnZpdGVyIjoid3d3LmhhcHB5a3RrQGdtYWlsLmNvbSIsImlhdCI6MTczMDIxNTY0Nn0.lYQTHRXl-mIAm2IJe-NrIRuxWLGAshUVg-DnPzi1Fx0
