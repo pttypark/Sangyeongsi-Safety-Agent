@@ -1,4 +1,4 @@
-# Sangyeongsi-Safety-Agent
+# HipHopWoo
 
 A real-time safety management dashboard that monitors construction sites to ensure workers are wearing proper Personal Protective Equipment (PPE) and are not entering defined danger zones.
 https://hub.ultralytics.com/models/UNwgMDZ5QChZ1tfzQS9S (yolo v11)
